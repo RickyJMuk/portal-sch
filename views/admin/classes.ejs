@@ -1,0 +1,137 @@
+
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 fw-bold text-primary">
+                        <i class="fas fa-school me-2"></i>Class Management
+                    </h1>
+                    <p class="text-muted">Manage school classes and grade levels</p>
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addClassModal">
+                    <i class="fas fa-plus me-2"></i>Add Class
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <% classes.forEach(cls => { %>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="class-icon me-3">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1"><%= cls.name %></h5>
+                                <p class="text-muted mb-0"><%= cls.level %></p>
+                            </div>
+                        </div>
+                        
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="stat-box">
+                                    <div class="stat-number text-primary"><%= cls.student_count %></div>
+                                    <div class="stat-label">Students</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-box">
+                                    <div class="stat-number text-success"><%= cls.subject_count %></div>
+                                    <div class="stat-label">Subjects</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-0">
+                        <div class="btn-group w-100">
+                            <button class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-users"></i> Students
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+</div>
+
+<!-- Add Class Modal -->
+<div class="modal fade" id="addClassModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Class</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addClassForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="className" class="form-label">Class Name</label>
+                        <input type="text" class="form-control" name="name" placeholder="e.g., Grade 3A" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="level" class="form-label">Grade Level</label>
+                        <select class="form-select" name="level" required>
+                            <option value="">Select Grade Level</option>
+                            <option value="PP1">PP1</option>
+                            <option value="PP2">PP2</option>
+                            <option value="Grade 1">Grade 1</option>
+                            <option value="Grade 2">Grade 2</option>
+                            <option value="Grade 3">Grade 3</option>
+                            <option value="Grade 4">Grade 4</option>
+                            <option value="Grade 5">Grade 5</option>
+                            <option value="Grade 6">Grade 6</option>
+                            <option value="Grade 7">Grade 7</option>
+                            <option value="Grade 8">Grade 8</option>
+                            <option value="Grade 9">Grade 9</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Class</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('addClassForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    try {
+        const response = await fetch('/admin/classes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            location.reload();
+        } else {
+            alert(result.error || 'Failed to add class');
+        }
+    } catch (error) {
+        alert('An error occurred while adding the class');
+    }
+});
+</script>

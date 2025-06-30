@@ -1,0 +1,135 @@
+
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Results Header -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <div class="result-icon mb-3">
+                        <% const percentage = (submission.total_score / submission.max_score) * 100; %>
+                        <% if (percentage === 100) { %>
+                            <i class="fas fa-trophy text-warning" style="font-size: 4rem;"></i>
+                            <h2 class="text-success mt-2">Perfect Score! 🎉</h2>
+                        <% } else if (percentage >= 70) { %>
+                            <i class="fas fa-star text-success" style="font-size: 4rem;"></i>
+                            <h2 class="text-success mt-2">Great Job! 👏</h2>
+                        <% } else if (percentage >= 50) { %>
+                            <i class="fas fa-thumbs-up text-warning" style="font-size: 4rem;"></i>
+                            <h2 class="text-warning mt-2">Good Effort! 👍</h2>
+                        <% } else { %>
+                            <i class="fas fa-graduation-cap text-info" style="font-size: 4rem;"></i>
+                            <h2 class="text-info mt-2">Keep Learning! 📚</h2>
+                        <% } %>
+                    </div>
+                    
+                    <h3 class="fw-bold mb-2"><%= submission.assignment_title %></h3>
+                    <p class="text-muted mb-3"><%= submission.subject_name %></p>
+                    
+                    <div class="score-display">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="score-box">
+                                    <div class="score-number text-primary"><%= submission.total_score %></div>
+                                    <div class="score-label">Points Earned</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="score-box">
+                                    <div class="score-number text-secondary"><%= submission.max_score %></div>
+                                    <div class="score-label">Total Points</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="score-box">
+                                    <div class="score-number text-<%= percentage >= 70 ? 'success' : percentage >= 50 ? 'warning' : 'danger' %>">
+                                        <%= Math.round(percentage) %>%
+                                    </div>
+                                    <div class="score-label">Percentage</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question Review -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-semibold">
+                        <i class="fas fa-clipboard-list me-2"></i>Question Review
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <% questions.forEach((question, index) => { %>
+                        <div class="question-review mb-4 <%= index < questions.length - 1 ? 'border-bottom pb-4' : '' %>">
+                            <div class="question-header mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-primary me-2">Question <%= index + 1 %></span>
+                                    <span class="badge bg-<%= question.is_correct ? 'success' : 'danger' %>">
+                                        <i class="fas fa-<%= question.is_correct ? 'check' : 'times' %>"></i>
+                                        <%= question.is_correct ? 'Correct' : 'Wrong' %>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <h6 class="question-text mb-3"><%= question.question_text %></h6>
+                            
+                            <div class="answers">
+                                <% JSON.parse(question.options).forEach((option, optionIndex) => { %>
+                                    <div class="answer-option mb-2 p-2 rounded 
+                                        <%= option === question.correct_option ? 'bg-success text-white' : 
+                                            option === question.student_answer && !question.is_correct ? 'bg-danger text-white' : 
+                                            'bg-light' %>">
+                                        <span class="option-letter me-2"><%= String.fromCharCode(65 + optionIndex) %></span>
+                                        <span class="option-text"><%= option %></span>
+                                        
+                                        <% if (option === question.correct_option) { %>
+                                            <i class="fas fa-check float-end"></i>
+                                        <% } else if (option === question.student_answer && !question.is_correct) { %>
+                                            <i class="fas fa-times float-end"></i>
+                                        <% } %>
+                                    </div>
+                                <% }); %>
+                            </div>
+                            
+                            <% if (!question.is_correct) { %>
+                                <div class="explanation mt-3 p-3 bg-light rounded">
+                                    <small class="text-muted">
+                                        <i class="fas fa-lightbulb me-1"></i>
+                                        <strong>Your answer:</strong> <%= question.student_answer %><br>
+                                        <strong>Correct answer:</strong> <%= question.correct_option %>
+                                    </small>
+                                </div>
+                            <% } %>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="d-flex gap-3 justify-content-center flex-wrap">
+                        <a href="/student/subjects" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Subjects
+                        </a>
+                        <a href="/student/dashboard" class="btn btn-outline-primary">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a>
+                        <button onclick="window.print()" class="btn btn-outline-secondary">
+                            <i class="fas fa-print me-2"></i>Print Results
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-top">
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-clock me-1"></i>
+                            Submitted on <%= new Date(submission.submitted_at).toLocaleString() %>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

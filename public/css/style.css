@@ -1,0 +1,638 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+/* Navigation */
+.navbar-brand {
+    font-size: 1.5rem;
+}
+
+.main-content {
+    padding-top: 0;
+}
+
+/* Landing Page Styles */
+.landing-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+.landing-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    color: white;
+}
+
+.feature-card {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
+.feature-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-size: 1.2rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.feature-content h5 {
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+.feature-content p {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.hero-illustration {
+    position: relative;
+    height: 500px;
+}
+
+.illustration-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.main-illustration {
+    font-size: 8rem;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.floating-card {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 1rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    animation: float 3s ease-in-out infinite;
+}
+
+.card-1 {
+    top: 20%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.card-2 {
+    top: 60%;
+    right: 20%;
+    animation-delay: 1s;
+}
+
+.card-3 {
+    bottom: 30%;
+    left: 20%;
+    animation-delay: 2s;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.step-card {
+    padding: 2rem 1rem;
+}
+
+.step-number {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0 auto 1rem;
+}
+
+/* Login Page */
+.login-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
+
+.demo-account {
+    font-size: 0.85rem;
+}
+
+/* Dashboard Styles */
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+}
+
+.class-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.stat-box {
+    text-align: center;
+}
+
+.stat-box .stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.stat-box .stat-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    opacity: 0.7;
+}
+
+/* Student Dashboard */
+.welcome-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    color: white;
+    margin-bottom: 2rem;
+}
+
+.student-avatar-large {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    backdrop-filter: blur(10px);
+}
+
+.stat-card {
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #007bff, #0056b3) !important;
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #28a745, #1e7e34) !important;
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #ffc107, #e0a800) !important;
+}
+
+.bg-gradient-info {
+    background: linear-gradient(135deg, #17a2b8, #138496) !important;
+}
+
+.subject-card {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.subject-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.subject-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.subject-icon-large {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+    margin: 0 auto;
+}
+
+.subject-card-hover {
+    transition: all 0.3s ease;
+}
+
+.subject-card-hover:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.activity-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 1rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.9rem;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.activity-content {
+    flex-grow: 1;
+}
+
+.activity-content h6 {
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.activity-content p {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Assignment Taking */
+.assignment-type-badge .badge {
+    padding: 0.5rem 1rem;
+}
+
+.question-header {
+    margin-bottom: 1rem;
+}
+
+.question-text {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.option-label {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.option-label:hover {
+    border-color: #007bff;
+    background-color: #f8f9ff;
+}
+
+.option-label.active {
+    border-color: #007bff;
+    background-color: #e7f3ff;
+}
+
+.option-letter {
+    width: 30px;
+    height: 30px;
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.option-text {
+    flex-grow: 1;
+}
+
+/* Feedback/Results */
+.result-icon {
+    margin-bottom: 2rem;
+}
+
+.score-display {
+    margin-top: 2rem;
+}
+
+.score-box {
+    padding: 1rem;
+    text-align: center;
+}
+
+.score-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.score-label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    font-weight: 500;
+    opacity: 0.7;
+}
+
+.question-review {
+    margin-bottom: 2rem;
+}
+
+.answer-option {
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.answer-option .option-letter {
+    width: 25px;
+    height: 25px;
+    font-size: 0.8rem;
+}
+
+/* Teacher Dashboard */
+.subject-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+}
+
+.student-card {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.student-card:hover {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.student-avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #28a745, #20692b);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-right: 1rem;
+}
+
+.student-info {
+    flex-grow: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hero-content {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .feature-card {
+        margin-bottom: 1rem;
+    }
+    
+    .floating-card {
+        position: relative;
+        margin: 1rem 0;
+    }
+    
+    .main-illustration {
+        font-size: 4rem;
+    }
+    
+    .welcome-banner {
+        text-align: center;
+        padding: 1.5rem;
+    }
+    
+    .student-avatar-large {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .score-number {
+        font-size: 2rem;
+    }
+}
+
+/* Utility Classes */
+.text-sm {
+    font-size: 0.875rem;
+}
+
+.fw-semibold {
+    font-weight: 600;
+}
+
+/* Animation Classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Card Hover Effects */
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Button Enhancements */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Table Enhancements */
+.table th {
+    border-top: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+/* Form Enhancements */
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Print Styles */
+@media print {
+    .navbar,
+    .btn,
+    .card-footer {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+    }
+    
+    body {
+        background: white !important;
+    }
+}

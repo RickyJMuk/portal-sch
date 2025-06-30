@@ -1,0 +1,185 @@
+
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 fw-bold text-primary">
+                        <i class="fas fa-tasks me-2"></i>Assignment Management
+                    </h1>
+                    <p class="text-muted">Create and manage assignments for all classes</p>
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAssignmentModal">
+                    <i class="fas fa-plus me-2"></i>Create Assignment
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Title</th>
+                            <th>Class</th>
+                            <th>Subject</th>
+                            <th>Type</th>
+                            <th>Questions</th>
+                            <th>Submissions</th>
+                            <th>Deadline</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% assignments.forEach(assignment => { %>
+                            <tr>
+                                <td>
+                                    <div>
+                                        <div class="fw-semibold"><%= assignment.title %></div>
+                                        <% if (assignment.description) { %>
+                                            <small class="text-muted"><%= assignment.description.substring(0, 50) %>...</small>
+                                        <% } %>
+                                    </div>
+                                </td>
+                                <td><%= assignment.class_name %></td>
+                                <td><%= assignment.subject_name %></td>
+                                <td>
+                                    <span class="badge bg-<%= assignment.type === 'mcq' ? 'info' : 'warning' %>">
+                                        <%= assignment.type.toUpperCase() %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary"><%= assignment.question_count %></span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success"><%= assignment.submission_count %></span>
+                                </td>
+                                <td>
+                                    <% if (assignment.deadline) { %>
+                                        <span class="text-<%= new Date(assignment.deadline) < new Date() ? 'danger' : 'success' %>">
+                                            <%= new Date(assignment.deadline).toLocaleDateString() %>
+                                        </span>
+                                    <% } else { %>
+                                        <span class="text-muted">No deadline</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-success" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Assignment Modal -->
+<div class="modal fade" id="addAssignmentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Assignment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addAssignmentForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Assignment Title</label>
+                                <input type="text" class="form-control" name="title" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="type" class="form-label">Assignment Type</label>
+                                <select class="form-select" name="type" required>
+                                    <option value="">Select Type</option>
+                                    <option value="mcq">Multiple Choice (MCQ)</option>
+                                    <option value="2choice">Two Choice</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="class_id" class="form-label">Class</label>
+                                <select class="form-select" name="class_id" id="assignmentClassSelect" required>
+                                    <option value="">Select Class</option>
+                                    <% classes.forEach(cls => { %>
+                                        <option value="<%= cls.id %>"><%= cls.name %> (<%= cls.level %>)</option>
+                                    <% }); %>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="subject_id" class="form-label">Subject</label>
+                                <select class="form-select" name="subject_id" id="assignmentSubjectSelect" required>
+                                    <option value="">Select Subject</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="deadline" class="form-label">Deadline (Optional)</label>
+                        <input type="datetime-local" class="form-control" name="deadline">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load subjects when class is selected
+document.getElementById('assignmentClassSelect').addEventListener('change', async function() {
+    const classId = this.value;
+    const subjectSelect = document.getElementById('assignmentSubjectSelect');
+    
+    subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+    
+    if (classId) {
+        try {
+            const response = await fetch(`/admin/classes/${classId}/subjects`);
+            const subjects = await response.json();
+            
+            subjects.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject.id;
+                option.textContent = subject.name;
+                subjectSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Failed to load subjects:', error);
+        }
+    }
+});
+</script>

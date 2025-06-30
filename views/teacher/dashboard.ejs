@@ -1,0 +1,190 @@
+
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 fw-bold text-primary">
+                <i class="fas fa-chalkboard-teacher me-2"></i>Teacher Dashboard
+            </h1>
+            <p class="text-muted"><%= teacher.class_name %> (<%= teacher.level %>)</p>
+        </div>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100 bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-user-graduate fs-2"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fs-4 fw-bold"><%= students.length %></div>
+                            <div>Students</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100 bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-book fs-2"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fs-4 fw-bold"><%= subjects.length %></div>
+                            <div>Subjects</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100 bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-tasks fs-2"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fs-4 fw-bold"><%= assignments.length %></div>
+                            <div>Assignments</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100 bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-chart-line fs-2"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fs-4 fw-bold">
+                                <%= assignments.reduce((sum, a) => sum + a.submission_count, 0) %>
+                            </div>
+                            <div>Submissions</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Subjects -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-semibold">My Subjects</h5>
+                </div>
+                <div class="card-body">
+                    <% if (subjects.length > 0) { %>
+                        <div class="list-group list-group-flush">
+                            <% subjects.forEach(subject => { %>
+                                <div class="list-group-item border-0 px-0">
+                                    <div class="d-flex align-items-center">
+                                        <div class="subject-icon me-3">
+                                            <i class="fas fa-book-open"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1"><%= subject.name %></h6>
+                                            <small class="text-muted"><%= teacher.class_name %></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    <% } else { %>
+                        <div class="text-center py-4">
+                            <i class="fas fa-book fs-1 text-muted mb-3"></i>
+                            <p class="text-muted">No subjects assigned</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Assignments -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-semibold">Recent Assignments</h5>
+                        <a href="/teacher/assignments" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <% if (assignments.length > 0) { %>
+                        <div class="list-group list-group-flush">
+                            <% assignments.forEach(assignment => { %>
+                                <div class="list-group-item border-0 px-0">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1"><%= assignment.title %></h6>
+                                            <small class="text-muted"><%= assignment.subject_name %></small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-success"><%= assignment.submission_count %> submissions</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    <% } else { %>
+                        <div class="text-center py-4">
+                            <i class="fas fa-tasks fs-1 text-muted mb-3"></i>
+                            <p class="text-muted">No assignments yet</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Students List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-semibold">Class Students</h5>
+                        <a href="/teacher/students" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <% if (students.length > 0) { %>
+                        <div class="row">
+                            <% students.slice(0, 8).forEach(student => { %>
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="student-card">
+                                        <div class="student-avatar">
+                                            <i class="fas fa-user-graduate"></i>
+                                        </div>
+                                        <div class="student-info">
+                                            <h6 class="mb-1"><%= student.full_name %></h6>
+                                            <small class="text-muted"><%= student.email %></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    <% } else { %>
+                        <div class="text-center py-4">
+                            <i class="fas fa-users fs-1 text-muted mb-3"></i>
+                            <p class="text-muted">No students in this class</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

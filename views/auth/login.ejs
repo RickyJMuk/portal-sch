@@ -1,0 +1,74 @@
+
+
+<div class="login-container">
+    <div class="container">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-md-6 col-lg-5">
+                <div class="card shadow-lg border-0 rounded-4">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <i class="fas fa-graduation-cap text-primary fs-1 mb-3"></i>
+                            <h2 class="fw-bold text-primary">School Portal</h2>
+                            <p class="text-muted">Sign in to your account</p>
+                        </div>
+
+                        <% if (error) { %>
+                            <div class="alert alert-danger" role="alert">
+                                <i class="fas fa-exclamation-triangle me-2"></i><%= error %>
+                            </div>
+                        <% } %>
+
+                        <form action="/auth/login" method="POST">
+                            <div class="mb-3">
+                                <label for="email" class="form-label fw-semibold">Email Address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="fas fa-envelope text-muted"></i>
+                                    </span>
+                                    <input type="email" class="form-control border-start-0 ps-0" id="email" name="email" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="password" class="form-label fw-semibold">Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="fas fa-lock text-muted"></i>
+                                    </span>
+                                    <input type="password" class="form-control border-start-0 ps-0" id="password" name="password" required>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-3 fw-semibold">
+                                <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                            </button>
+                        </form>
+
+                        <div class="mt-4 pt-4 border-top">
+                            <h6 class="text-center mb-3 text-muted">Demo Accounts</h6>
+                            <div class="demo-accounts">
+                                <div class="row g-2 text-sm">
+                                    <div class="col-12">
+                                        <div class="demo-account p-2 bg-light rounded">
+                                            <strong>Admin:</strong> admin@school.edu / password123
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="demo-account p-2 bg-light rounded">
+                                            <strong>Teacher:</strong> sarah.johnson@school.edu / password123
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="demo-account p-2 bg-light rounded">
+                                            <strong>Student:</strong> emma.wilson@school.edu / password123
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

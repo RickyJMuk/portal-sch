@@ -1,0 +1,130 @@
+
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Assignment Header -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h2 class="fw-bold text-primary mb-1"><%= assignment.title %></h2>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-book me-1"></i><%= assignment.subject_name %>
+                                <% if (assignment.deadline) { %>
+                                    • <i class="fas fa-clock me-1"></i>Due: <%= new Date(assignment.deadline).toLocaleDateString() %>
+                                <% } %>
+                            </p>
+                        </div>
+                        <div class="assignment-type-badge">
+                            <span class="badge bg-<%= assignment.type === 'mcq' ? 'info' : 'warning' %> fs-6">
+                                <%= assignment.type.toUpperCase() %>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <% if (assignment.description) { %>
+                        <div class="mt-3 p-3 bg-light rounded">
+                            <p class="mb-0"><%= assignment.description %></p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Assignment Form -->
+            <form action="/student/assignments/<%= assignment.id %>/submit" method="POST" id="assignmentForm">
+                <% questions.forEach((question, index) => { %>
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body">
+                            <div class="question-header mb-3">
+                                <span class="badge bg-primary me-2">Question <%= index + 1 %></span>
+                                <span class="badge bg-secondary"><%= question.marks %> mark<%= question.marks > 1 ? 's' : '' %></span>
+                            </div>
+                            
+                            <h5 class="question-text mb-4"><%= question.question_text %></h5>
+                            
+                            <div class="options">
+                                <% JSON.parse(question.options).forEach((option, optionIndex) => { %>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" 
+                                               type="radio" 
+                                               name="<%= question.id %>" 
+                                               id="q<%= question.id %>_opt<%= optionIndex %>" 
+                                               value="<%= option %>" 
+                                               required>
+                                        <label class="form-check-label option-label" 
+                                               for="q<%= question.id %>_opt<%= optionIndex %>">
+                                            <span class="option-letter"><%= String.fromCharCode(65 + optionIndex) %></span>
+                                            <span class="option-text"><%= option %></span>
+                                        </label>
+                                    </div>
+                                <% }); %>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+
+                <!-- Submit Button -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-lightbulb fs-1 text-warning mb-2"></i>
+                            <p class="text-muted">
+                                Review your answers carefully before submitting. 
+                                You'll see your results immediately after submission!
+                            </p>
+                        </div>
+                        
+                        <div class="d-flex gap-3 justify-content-center">
+                            <a href="/student/subjects" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Subjects
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Assignment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add form validation and confirmation
+document.getElementById('assignmentForm').addEventListener('submit', function(e) {
+    const unanswered = [];
+    const questions = document.querySelectorAll('[name^="<%= questions[0]?.id.substring(0, 8) %>"]');
+    
+    // Check if all questions are answered
+    <% questions.forEach((question, index) => { %>
+        const q<%= index %> = document.querySelector('input[name="<%= question.id %>"]:checked');
+        if (!q<%= index %>) {
+            unanswered.push(<%= index + 1 %>);
+        }
+    <% }); %>
+    
+    if (unanswered.length > 0) {
+        e.preventDefault();
+        alert(`Please answer question(s): ${unanswered.join(', ')}`);
+        return;
+    }
+    
+    // Confirm submission
+    if (!confirm('Are you sure you want to submit your assignment? You cannot change your answers after submission.')) {
+        e.preventDefault();
+    }
+});
+
+// Add click effect to option labels
+document.querySelectorAll('.option-label').forEach(label => {
+    label.addEventListener('click', function() {
+        // Remove active class from siblings
+        this.parentNode.parentNode.querySelectorAll('.option-label').forEach(l => {
+            l.classList.remove('active');
+        });
+        // Add active class to clicked option
+        this.classList.add('active');
+    });
+});
+</script>

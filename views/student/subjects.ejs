@@ -1,0 +1,88 @@
+
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 fw-bold text-primary">
+                <i class="fas fa-book me-2"></i>My Subjects
+            </h1>
+            <p class="text-muted"><%= student.class_name %> - Choose a subject to start learning!</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <% subjects.forEach(subject => { %>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100 subject-card-hover">
+                    <div class="card-body text-center p-4">
+                        <div class="subject-icon-large mb-3">
+                            <i class="fas fa-<%= subject.name.toLowerCase().includes('math') ? 'calculator' : 
+                               subject.name.toLowerCase().includes('english') ? 'book-open' :
+                               subject.name.toLowerCase().includes('science') ? 'flask' :
+                               subject.name.toLowerCase().includes('history') ? 'landmark' :
+                               subject.name.toLowerCase().includes('art') ? 'palette' :
+                               'graduation-cap' %>"></i>
+                        </div>
+                        
+                        <h4 class="card-title fw-bold mb-3"><%= subject.name %></h4>
+                        
+                        <div class="row text-center mb-4">
+                            <div class="col-6">
+                                <div class="stat-box">
+                                    <div class="stat-number text-primary"><%= subject.assignment_count %></div>
+                                    <div class="stat-label">Assignments</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-box">
+                                    <div class="stat-number text-success"><%= subject.completed_count %></div>
+                                    <div class="stat-label">Completed</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <% if (subject.assignment_count > 0) { %>
+                            <div class="mb-3">
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-success" 
+                                         style="width: <%= subject.assignment_count > 0 ? (subject.completed_count / subject.assignment_count * 100) : 0 %>%">
+                                    </div>
+                                </div>
+                                <small class="text-muted mt-1">
+                                    <%= Math.round(subject.assignment_count > 0 ? (subject.completed_count / subject.assignment_count * 100) : 0) %>% Complete
+                                </small>
+                            </div>
+                        <% } %>
+
+                        <a href="/student/subjects/<%= subject.id %>/assignments" 
+                           class="btn btn-primary w-100">
+                            <% if (subject.assignment_count > 0) { %>
+                                <% if (subject.completed_count === subject.assignment_count) { %>
+                                    <i class="fas fa-trophy me-2"></i>Review Assignments
+                                <% } else { %>
+                                    <i class="fas fa-play me-2"></i>Continue Learning
+                                <% } %>
+                            <% } else { %>
+                                <i class="fas fa-clock me-2"></i>Coming Soon
+                            <% } %>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+
+    <% if (subjects.length === 0) { %>
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-book fs-1 text-muted mb-4"></i>
+                        <h4 class="text-muted">No Subjects Available</h4>
+                        <p class="text-muted">Your subjects will appear here once they are assigned by your teacher.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% } %>
+</div>
