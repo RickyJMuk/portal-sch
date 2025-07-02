@@ -1,0 +1,275 @@
+<% layout('../layout') -%>
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/teacher/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="/teacher/assignments">Assignments</a></li>
+                    <li class="breadcrumb-item active"><%= assignment.title %></li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 fw-bold text-primary"><%= assignment.title %></h1>
+                    <p class="text-muted">
+                        <i class="fas fa-school me-1"></i><%= assignment.class_name %> • 
+                        <i class="fas fa-book me-1"></i><%= assignment.subject_name %> • 
+                        <span class="badge bg-<%= assignment.type === 'mcq' ? 'info' : 'warning' %>"><%= assignment.type.toUpperCase() %></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Assignment Overview -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-semibold">Assignment Overview</h5>
+                </div>
+                <div class="card-body">
+                    <% if (assignment.description) { %>
+                        <div class="mb-3">
+                            <h6>Description</h6>
+                            <p class="text-muted"><%= assignment.description %></p>
+                        </div>
+                    <% } %>
+                    
+                    <div class="mb-3">
+                        <h6>Questions</h6>
+                        <p class="text-muted"><%= questions.length %> questions</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>Total Marks</h6>
+                        <p class="text-muted"><%= questions.reduce((sum, q) => sum + q.marks, 0) %> marks</p>
+                    </div>
+                    
+                    <% if (assignment.deadline) { %>
+                        <div class="mb-3">
+                            <h6>Deadline</h6>
+                            <p class="text-<%= new Date(assignment.deadline) < new Date() ? 'danger' : 'success' %>">
+                                <%= new Date(assignment.deadline).toLocaleString() %>
+                            </p>
+                        </div>
+                    <% } %>
+                    
+                    <div class="mb-3">
+                        <h6>Created</h6>
+                        <p class="text-muted"><%= new Date(assignment.created_at).toLocaleDateString() %></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-semibold">Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <% if (submissions.length > 0) { %>
+                        <% 
+                            const totalScore = submissions.reduce((sum, s) => sum + s.total_score, 0);
+                            const maxPossible = submissions.length * questions.reduce((sum, q) => sum + q.marks, 0);
+                            const avgScore = totalScore / submissions.length;
+                            const avgPercentage = (avgScore / questions.reduce((sum, q) => sum + q.marks, 0)) * 100;
+                            const perfectScores = submissions.filter(s => s.total_score === s.max_score).length;
+                        %>
+                        
+                        <div class="stat-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Total Submissions</span>
+                                <span class="fw-bold"><%= submissions.length %></span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Average Score</span>
+                                <span class="fw-bold"><%= Math.round(avgScore * 10) / 10 %>/<%= questions.reduce((sum, q) => sum + q.marks, 0) %></span>
+                            </div>
+                            <div class="progress mt-1" style="height: 6px;">
+                                <div class="progress-bar bg-primary" style="width: <%= avgPercentage %>%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Average Percentage</span>
+                                <span class="fw-bold"><%= Math.round(avgPercentage) %>%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="d-flex justify-content-between">
+                                <span>Perfect Scores</span>
+                                <span class="fw-bold text-success"><%= perfectScores %></span>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <p class="text-muted text-center">No submissions yet</p>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submissions -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-semibold">Student Submissions (<%= submissions.length %>)</h5>
+                </div>
+                <div class="card-body">
+                    <% if (submissions.length > 0) { %>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Score</th>
+                                        <th>Percentage</th>
+                                        <th>Submitted</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% submissions.forEach(submission => { %>
+                                        <tr>
+                                            <td>
+                                                <div>
+                                                    <div class="fw-semibold"><%= submission.student_name %></div>
+                                                    <small class="text-muted"><%= submission.student_email %></small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-<%= submission.total_score === submission.max_score ? 'success' : submission.total_score >= submission.max_score * 0.7 ? 'warning' : 'danger' %>">
+                                                    <%= submission.total_score %>/<%= submission.max_score %>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <% const percentage = Math.round((submission.total_score / submission.max_score) * 100); %>
+                                                <span class="text-<%= percentage >= 70 ? 'success' : percentage >= 50 ? 'warning' : 'danger' %>">
+                                                    <%= percentage %>%
+                                                </span>
+                                            </td>
+                                            <td class="text-muted">
+                                                <%= new Date(submission.submitted_at).toLocaleString() %>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-outline-primary btn-sm" 
+                                                        onclick="viewSubmissionDetails('<%= submission.id %>', '<%= submission.student_name %>')">
+                                                    <i class="fas fa-eye me-1"></i>View Answers
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } else { %>
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fs-1 text-muted mb-3"></i>
+                            <h5 class="text-muted">No Submissions Yet</h5>
+                            <p class="text-muted">Students haven't submitted this assignment yet.</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Submission Details Modal -->
+<div class="modal fade" id="submissionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="submissionModalTitle">Student Answers</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="submissionModalBody">
+                <!-- Content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewSubmissionDetails(submissionId, studentName) {
+    // Find the submission data
+    const submissions = <%- JSON.stringify(submissions) %>;
+    const submission = submissions.find(s => s.id === submissionId);
+    
+    if (!submission) {
+        alert('Submission not found');
+        return;
+    }
+
+    // Set modal title
+    document.getElementById('submissionModalTitle').textContent = `${studentName} - Detailed Answers`;
+    
+    // Build modal content
+    let content = `
+        <div class="mb-3">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Score:</strong> ${submission.total_score}/${submission.max_score}
+                </div>
+                <div class="col-md-4">
+                    <strong>Percentage:</strong> ${Math.round((submission.total_score / submission.max_score) * 100)}%
+                </div>
+                <div class="col-md-4">
+                    <strong>Submitted:</strong> ${new Date(submission.submitted_at).toLocaleString()}
+                </div>
+            </div>
+        </div>
+        <hr>
+    `;
+    
+    // Add each question and answer
+    submission.detailed_answers.forEach((answer, index) => {
+        const isCorrect = answer.is_correct;
+        content += `
+            <div class="question-review mb-4 ${index < submission.detailed_answers.length - 1 ? 'border-bottom pb-4' : ''}">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge bg-primary">Question ${index + 1}</span>
+                    <span class="badge bg-${isCorrect ? 'success' : 'danger'}">
+                        <i class="fas fa-${isCorrect ? 'check' : 'times'}"></i>
+                        ${isCorrect ? 'Correct' : 'Wrong'} (${answer.obtained_marks}/${answer.marks} marks)
+                    </span>
+                </div>
+                
+                <h6 class="mb-3">${answer.question_text}</h6>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="p-2 rounded ${isCorrect ? 'bg-success text-white' : 'bg-danger text-white'}">
+                            <strong>Student Answer:</strong><br>
+                            ${answer.student_answer || 'No answer provided'}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-2 rounded bg-success text-white">
+                            <strong>Correct Answer:</strong><br>
+                            ${answer.correct_answer}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    document.getElementById('submissionModalBody').innerHTML = content;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('submissionModal'));
+    modal.show();
+}
+</script>

@@ -68,9 +68,9 @@
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-primary" title="View">
+                                        <a href="/admin/assignments/<%= assignment.id %>" class="btn btn-outline-primary" title="View">
                                             <i class="fas fa-eye"></i>
-                                        </button>
+                                        </a>
                                         <button class="btn btn-outline-success" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </button>
@@ -90,7 +90,7 @@
 
 <!-- Add Assignment Modal -->
 <div class="modal fade" id="addAssignmentModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Create New Assignment</h5>
@@ -98,7 +98,8 @@
             </div>
             <form id="addAssignmentForm">
                 <div class="modal-body">
-                    <div class="row">
+                    <!-- Assignment Details -->
+                    <div class="row mb-4">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="title" class="form-label">Assignment Title</label>
@@ -108,7 +109,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="type" class="form-label">Assignment Type</label>
-                                <select class="form-select" name="type" required>
+                                <select class="form-select" name="type" id="assignmentType" required>
                                     <option value="">Select Type</option>
                                     <option value="mcq">Multiple Choice (MCQ)</option>
                                     <option value="2choice">Two Choice</option>
@@ -122,8 +123,8 @@
                         <textarea class="form-control" name="description" rows="3"></textarea>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-6">
+                    <div class="row mb-4">
+                        <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="class_id" class="form-label">Class</label>
                                 <select class="form-select" name="class_id" id="assignmentClassSelect" required>
@@ -134,7 +135,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="subject_id" class="form-label">Subject</label>
                                 <select class="form-select" name="subject_id" id="assignmentSubjectSelect" required>
@@ -142,11 +143,26 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="deadline" class="form-label">Deadline (Optional)</label>
+                                <input type="datetime-local" class="form-control" name="deadline">
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="deadline" class="form-label">Deadline (Optional)</label>
-                        <input type="datetime-local" class="form-control" name="deadline">
+
+                    <!-- Questions Section -->
+                    <div class="border-top pt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold">Questions</h6>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="addQuestionBtn">
+                                <i class="fas fa-plus me-1"></i>Add Question
+                            </button>
+                        </div>
+                        
+                        <div id="questionsContainer">
+                            <!-- Questions will be added here dynamically -->
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -159,6 +175,8 @@
 </div>
 
 <script>
+let questionCount = 0;
+
 // Load subjects when class is selected
 document.getElementById('assignmentClassSelect').addEventListener('change', async function() {
     const classId = this.value;
@@ -181,5 +199,227 @@ document.getElementById('assignmentClassSelect').addEventListener('change', asyn
             console.error('Failed to load subjects:', error);
         }
     }
+});
+
+// Add question functionality
+document.getElementById('addQuestionBtn').addEventListener('click', function() {
+    const assignmentType = document.getElementById('assignmentType').value;
+    if (!assignmentType) {
+        alert('Please select assignment type first');
+        return;
+    }
+    
+    addQuestion(assignmentType);
+});
+
+function addQuestion(type) {
+    questionCount++;
+    const container = document.getElementById('questionsContainer');
+    
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'card mb-3';
+    questionDiv.innerHTML = `
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">Question ${questionCount}</h6>
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeQuestion(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Question Text</label>
+                <textarea class="form-control question-text" rows="2" required></textarea>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Marks</label>
+                <input type="number" class="form-control question-marks" value="1" min="1" max="10" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Options</label>
+                <div class="options-container">
+                    ${type === 'mcq' ? generateMCQOptions() : generate2ChoiceOptions()}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Correct Answer</label>
+                <select class="form-select correct-answer" required>
+                    <option value="">Select correct answer</option>
+                </select>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(questionDiv);
+    updateCorrectAnswerOptions(questionDiv);
+}
+
+function generateMCQOptions() {
+    return `
+        <div class="input-group mb-2">
+            <span class="input-group-text">A</span>
+            <input type="text" class="form-control option-input" placeholder="Option A" required>
+        </div>
+        <div class="input-group mb-2">
+            <span class="input-group-text">B</span>
+            <input type="text" class="form-control option-input" placeholder="Option B" required>
+        </div>
+        <div class="input-group mb-2">
+            <span class="input-group-text">C</span>
+            <input type="text" class="form-control option-input" placeholder="Option C">
+        </div>
+        <div class="input-group mb-2">
+            <span class="input-group-text">D</span>
+            <input type="text" class="form-control option-input" placeholder="Option D">
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addMCQOption(this)">
+            <i class="fas fa-plus me-1"></i>Add Option
+        </button>
+    `;
+}
+
+function generate2ChoiceOptions() {
+    return `
+        <div class="input-group mb-2">
+            <span class="input-group-text">A</span>
+            <input type="text" class="form-control option-input" placeholder="Option A" required>
+        </div>
+        <div class="input-group mb-2">
+            <span class="input-group-text">B</span>
+            <input type="text" class="form-control option-input" placeholder="Option B" required>
+        </div>
+    `;
+}
+
+function addMCQOption(button) {
+    const container = button.parentNode;
+    const optionCount = container.querySelectorAll('.option-input').length;
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    
+    if (optionCount < 8) {
+        const newOption = document.createElement('div');
+        newOption.className = 'input-group mb-2';
+        newOption.innerHTML = `
+            <span class="input-group-text">${letters[optionCount]}</span>
+            <input type="text" class="form-control option-input" placeholder="Option ${letters[optionCount]}">
+            <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        container.insertBefore(newOption, button);
+        updateCorrectAnswerOptions(container.closest('.card'));
+    }
+}
+
+function removeOption(button) {
+    const optionDiv = button.parentNode;
+    const card = optionDiv.closest('.card');
+    optionDiv.remove();
+    updateCorrectAnswerOptions(card);
+}
+
+function updateCorrectAnswerOptions(questionCard) {
+    const correctAnswerSelect = questionCard.querySelector('.correct-answer');
+    const optionInputs = questionCard.querySelectorAll('.option-input');
+    
+    // Clear existing options
+    correctAnswerSelect.innerHTML = '<option value="">Select correct answer</option>';
+    
+    // Add options based on filled inputs
+    optionInputs.forEach((input, index) => {
+        if (input.value.trim()) {
+            const option = document.createElement('option');
+            option.value = input.value.trim();
+            option.textContent = input.value.trim();
+            correctAnswerSelect.appendChild(option);
+        }
+    });
+    
+    // Listen for changes in option inputs
+    optionInputs.forEach(input => {
+        input.addEventListener('input', () => updateCorrectAnswerOptions(questionCard));
+    });
+}
+
+function removeQuestion(button) {
+    button.closest('.card').remove();
+}
+
+// Form submission
+document.getElementById('addAssignmentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    // Collect questions
+    const questions = [];
+    const questionCards = document.querySelectorAll('#questionsContainer .card');
+    
+    if (questionCards.length === 0) {
+        alert('Please add at least one question');
+        return;
+    }
+    
+    questionCards.forEach(card => {
+        const questionText = card.querySelector('.question-text').value.trim();
+        const marks = parseInt(card.querySelector('.question-marks').value);
+        const correctAnswer = card.querySelector('.correct-answer').value;
+        const optionInputs = card.querySelectorAll('.option-input');
+        
+        const options = [];
+        optionInputs.forEach(input => {
+            if (input.value.trim()) {
+                options.push(input.value.trim());
+            }
+        });
+        
+        if (questionText && options.length >= 2 && correctAnswer) {
+            questions.push({
+                question_text: questionText,
+                options: options,
+                correct_option: correctAnswer,
+                marks: marks
+            });
+        }
+    });
+    
+    if (questions.length === 0) {
+        alert('Please complete all questions properly');
+        return;
+    }
+    
+    data.questions = questions;
+    
+    try {
+        const response = await fetch('/admin/assignments', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            location.reload();
+        } else {
+            alert(result.error || 'Failed to create assignment');
+        }
+    } catch (error) {
+        alert('An error occurred while creating the assignment');
+    }
+});
+
+// Reset form when modal is closed
+document.getElementById('addAssignmentModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('addAssignmentForm').reset();
+    document.getElementById('questionsContainer').innerHTML = '';
+    document.getElementById('assignmentSubjectSelect').innerHTML = '<option value="">Select Subject</option>';
+    questionCount = 0;
 });
 </script>

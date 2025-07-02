@@ -46,7 +46,7 @@ router.get('/dashboard', async (req, res) => {
     const stats = await query(`
       SELECT 
         COUNT(*) as total_submissions,
-        COALESCE(AVG(total_score), 0) as avg_score,
+        COALESCE(AVG(CASE WHEN max_score > 0 THEN (total_score * 100.0 / max_score) ELSE 0 END), 0) as avg_score,
         COUNT(CASE WHEN total_score = max_score THEN 1 END) as perfect_scores
       FROM submissions 
       WHERE student_id = ?
@@ -271,7 +271,7 @@ router.post('/assignments/:id/submit', async (req, res) => {
       SELECT * FROM questions WHERE assignment_id = ?
     `, [assignmentId]);
 
-    // Calculate score
+    // Calculate score with auto-grading
     let totalScore = 0;
     let maxScore = 0;
     const questionScores = {};
@@ -279,8 +279,11 @@ router.post('/assignments/:id/submit', async (req, res) => {
     for (const question of questions) {
       maxScore += question.marks;
       const studentAnswer = answers[question.id];
+      
+      // Auto-grading: Check if student answer matches correct option
       const isCorrect = studentAnswer === question.correct_option;
       const score = isCorrect ? question.marks : 0;
+      
       totalScore += score;
       questionScores[question.id] = score;
     }
@@ -292,7 +295,7 @@ router.post('/assignments/:id/submit', async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `, [submissionId, student.id, assignmentId, JSON.stringify(answers), totalScore, maxScore, true]);
 
-    // Create marks records
+    // Create marks records for each question
     for (const question of questions) {
       await query(`
         INSERT INTO marks (id, submission_id, question_id, obtained_marks)
@@ -336,7 +339,7 @@ router.get('/submissions/:id/feedback', async (req, res) => {
     const submission = submissions[0];
     const answers = JSON.parse(submission.answers);
 
-    // Get questions with student answers
+    // Get questions with student answers and marks
     const questions = await query(`
       SELECT q.*, m.obtained_marks
       FROM questions q
@@ -345,7 +348,7 @@ router.get('/submissions/:id/feedback', async (req, res) => {
       ORDER BY q.question_order, q.id
     `, [submissionId, submission.assignment_id]);
 
-    // Add student answers to questions
+    // Add student answers and correctness to questions
     questions.forEach(question => {
       question.student_answer = answers[question.id];
       question.is_correct = question.student_answer === question.correct_option;

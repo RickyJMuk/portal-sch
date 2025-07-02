@@ -314,6 +314,126 @@ router.get('/assignments', async (req, res) => {
   }
 });
 
+// Create Assignment with Questions
+router.post('/assignments', async (req, res) => {
+  try {
+    const { title, description, type, class_id, subject_id, deadline, questions } = req.body;
+
+    if (!title || !type || !class_id || !subject_id || !questions || questions.length === 0) {
+      return res.status(400).json({ error: 'All fields are required including at least one question' });
+    }
+
+    // Validate questions
+    for (let i = 0; i < questions.length; i++) {
+      const question = questions[i];
+      if (!question.question_text || !question.options || !question.correct_option) {
+        return res.status(400).json({ error: `Question ${i + 1} is incomplete` });
+      }
+      
+      if (type === 'mcq' && question.options.length < 2) {
+        return res.status(400).json({ error: `Question ${i + 1} must have at least 2 options for MCQ` });
+      }
+      
+      if (type === '2choice' && question.options.length !== 2) {
+        return res.status(400).json({ error: `Question ${i + 1} must have exactly 2 options for 2-choice` });
+      }
+      
+      if (!question.options.includes(question.correct_option)) {
+        return res.status(400).json({ error: `Question ${i + 1} correct answer must be one of the options` });
+      }
+    }
+
+    const assignmentId = uuidv4();
+    
+    // Create assignment
+    await query(
+      'INSERT INTO assignments (id, class_id, subject_id, title, description, type, deadline) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [assignmentId, class_id, subject_id, title, description, type, deadline || null]
+    );
+
+    // Create questions
+    for (let i = 0; i < questions.length; i++) {
+      const question = questions[i];
+      const questionId = uuidv4();
+      
+      await query(
+        'INSERT INTO questions (id, assignment_id, question_text, options, correct_option, marks, question_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [
+          questionId,
+          assignmentId,
+          question.question_text,
+          JSON.stringify(question.options),
+          question.correct_option,
+          question.marks || 1,
+          i + 1
+        ]
+      );
+    }
+
+    res.json({ success: true, assignmentId });
+  } catch (error) {
+    console.error('Create assignment error:', error);
+    res.status(500).json({ error: 'Failed to create assignment' });
+  }
+});
+
+// View Assignment Details
+router.get('/assignments/:id', async (req, res) => {
+  try {
+    const assignmentId = req.params.id;
+
+    // Get assignment details
+    const assignments = await query(`
+      SELECT a.*, s.name as subject_name, c.name as class_name
+      FROM assignments a
+      JOIN subjects s ON a.subject_id = s.id
+      JOIN classes c ON a.class_id = c.id
+      WHERE a.id = ?
+    `, [assignmentId]);
+
+    if (assignments.length === 0) {
+      return res.render('error', {
+        title: 'Error',
+        error: 'Assignment not found',
+        statusCode: 404
+      });
+    }
+
+    const assignment = assignments[0];
+
+    // Get questions
+    const questions = await query(`
+      SELECT * FROM questions 
+      WHERE assignment_id = ? 
+      ORDER BY question_order, id
+    `, [assignmentId]);
+
+    // Get submissions with student details
+    const submissions = await query(`
+      SELECT sub.*, u.full_name as student_name, u.email as student_email
+      FROM submissions sub
+      JOIN students s ON sub.student_id = s.id
+      JOIN users u ON s.user_id = u.id
+      WHERE sub.assignment_id = ?
+      ORDER BY sub.submitted_at DESC
+    `, [assignmentId]);
+
+    res.render('admin/assignment-detail', {
+      title: assignment.title,
+      assignment,
+      questions,
+      submissions
+    });
+  } catch (error) {
+    console.error('Assignment detail error:', error);
+    res.render('error', {
+      title: 'Error',
+      error: 'Failed to load assignment details',
+      statusCode: 500
+    });
+  }
+});
+
 // Get subjects for class (AJAX)
 router.get('/classes/:classId/subjects', async (req, res) => {
   try {

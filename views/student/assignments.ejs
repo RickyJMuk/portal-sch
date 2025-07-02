@@ -1,0 +1,108 @@
+
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/student/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="/student/subjects">Subjects</a></li>
+                    <li class="breadcrumb-item active"><%= subject.name %></li>
+                </ol>
+            </nav>
+            
+            <h1 class="h3 fw-bold text-primary">
+                <i class="fas fa-tasks me-2"></i><%= subject.name %> - Assignments
+            </h1>
+            <p class="text-muted"><%= subject.class_name %> - Complete your assignments below</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <% if (assignments.length > 0) { %>
+            <% assignments.forEach(assignment => { %>
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h5 class="card-title fw-bold"><%= assignment.title %></h5>
+                                <span class="badge bg-<%= assignment.type === 'mcq' ? 'info' : 'warning' %>">
+                                    <%= assignment.type.toUpperCase() %>
+                                </span>
+                            </div>
+                            
+                            <% if (assignment.description) { %>
+                                <p class="card-text text-muted mb-3">
+                                    <%= assignment.description.length > 100 ? assignment.description.substring(0, 100) + '...' : assignment.description %>
+                                </p>
+                            <% } %>
+                            
+                            <% if (assignment.deadline) { %>
+                                <div class="mb-3">
+                                    <small class="text-<%= new Date(assignment.deadline) < new Date() ? 'danger' : 'warning' %>">
+                                        <i class="fas fa-clock me-1"></i>
+                                        Due: <%= new Date(assignment.deadline).toLocaleDateString() %>
+                                    </small>
+                                </div>
+                            <% } %>
+                            
+                            <% if (assignment.submission_id) { %>
+                                <!-- Already submitted -->
+                                <div class="alert alert-success mb-3">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    <strong>Completed!</strong><br>
+                                    Score: <%= assignment.total_score %>/<%= assignment.max_score %> 
+                                    (<%= Math.round((assignment.total_score / assignment.max_score) * 100) %>%)
+                                </div>
+                                <div class="d-grid">
+                                    <a href="/student/submissions/<%= assignment.submission_id %>/feedback" class="btn btn-outline-primary">
+                                        <i class="fas fa-eye me-2"></i>View Results
+                                    </a>
+                                </div>
+                            <% } else { %>
+                                <!-- Not submitted yet -->
+                                <% if (assignment.deadline && new Date(assignment.deadline) < new Date()) { %>
+                                    <div class="alert alert-danger mb-3">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <strong>Deadline Passed</strong><br>
+                                        This assignment is no longer available.
+                                    </div>
+                                    <div class="d-grid">
+                                        <button class="btn btn-secondary" disabled>
+                                            <i class="fas fa-lock me-2"></i>Expired
+                                        </button>
+                                    </div>
+                                <% } else { %>
+                                    <div class="d-grid">
+                                        <a href="/student/assignments/<%= assignment.id %>/take" class="btn btn-primary">
+                                            <i class="fas fa-play me-2"></i>Start Assignment
+                                        </a>
+                                    </div>
+                                <% } %>
+                            <% } %>
+                        </div>
+                        <div class="card-footer bg-light border-0">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>
+                                Created: <%= new Date(assignment.created_at).toLocaleDateString() %>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-tasks fs-1 text-muted mb-4"></i>
+                        <h4 class="text-muted">No Assignments Available</h4>
+                        <p class="text-muted">There are no assignments for this subject yet. Check back later!</p>
+                        <a href="/student/subjects" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Subjects
+                        </a>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</div>
