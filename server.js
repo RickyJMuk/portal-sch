@@ -18,7 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressLayouts);           //Tell express to use layouts
-app.set('layout', 'layout');       //Default layout file in /views/layout.e
+app.set('layout', 'layout');
 
 // Session configuration
 app.use(session({
@@ -54,11 +54,6 @@ app.get('/', (req, res) => {
   }
   res.render('landing', { title: 'Welcome to School Portal' });
 });
-
-// app.get('/', (req, res) => {
-//   res.render('landing'); // Or whatever your landing page view is
-// });
-
 
 // Dashboard redirects
 app.get('/dashboard', requireAuth(), (req, res) => {

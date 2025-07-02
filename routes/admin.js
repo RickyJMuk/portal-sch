@@ -165,6 +165,122 @@ router.post('/classes', async (req, res) => {
   }
 });
 
+// Subjects Management
+router.get('/subjects', async (req, res) => {
+  try {
+    const subjects = await query(`
+      SELECT s.*, c.name as class_name, c.level,
+        COUNT(DISTINCT a.id) as assignment_count,
+        COUNT(DISTINCT t.id) as teacher_count
+      FROM subjects s
+      JOIN classes c ON s.class_id = c.id
+      LEFT JOIN assignments a ON s.id = a.subject_id
+      LEFT JOIN teachers t ON JSON_CONTAINS(t.subject_ids, JSON_QUOTE(s.id))
+      GROUP BY s.id
+      ORDER BY c.level, c.name, s.name
+    `);
+
+    const classes = await query('SELECT * FROM classes ORDER BY level, name');
+
+    res.render('admin/subjects', {
+      title: 'Subject Management',
+      subjects,
+      classes
+    });
+  } catch (error) {
+    console.error('Subjects page error:', error);
+    res.render('error', {
+      title: 'Error',
+      error: 'Failed to load subjects',
+      statusCode: 500
+    });
+  }
+});
+
+// Create Subject
+router.post('/subjects', async (req, res) => {
+  try {
+    const { name, class_id } = req.body;
+
+    if (!name || !class_id) {
+      return res.status(400).json({ error: 'Name and class are required' });
+    }
+
+    // Check if subject already exists for this class
+    const existingSubjects = await query('SELECT id FROM subjects WHERE name = ? AND class_id = ?', [name, class_id]);
+    if (existingSubjects.length > 0) {
+      return res.status(400).json({ error: 'Subject already exists for this class' });
+    }
+
+    const subjectId = uuidv4();
+    await query('INSERT INTO subjects (id, name, class_id) VALUES (?, ?, ?)', [subjectId, name, class_id]);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Create subject error:', error);
+    res.status(500).json({ error: 'Failed to create subject' });
+  }
+});
+
+// Edit Subject
+router.put('/subjects/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, class_id } = req.body;
+
+    if (!name || !class_id) {
+      return res.status(400).json({ error: 'Name and class are required' });
+    }
+
+    // Check if subject exists
+    const subjects = await query('SELECT id FROM subjects WHERE id = ?', [id]);
+    if (subjects.length === 0) {
+      return res.status(404).json({ error: 'Subject not found' });
+    }
+
+    // Check if another subject with same name exists for this class
+    const existingSubjects = await query('SELECT id FROM subjects WHERE name = ? AND class_id = ? AND id != ?', [name, class_id, id]);
+    if (existingSubjects.length > 0) {
+      return res.status(400).json({ error: 'Subject already exists for this class' });
+    }
+
+    await query('UPDATE subjects SET name = ?, class_id = ? WHERE id = ?', [name, class_id, id]);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Edit subject error:', error);
+    res.status(500).json({ error: 'Failed to edit subject' });
+  }
+});
+
+// Delete Subject
+router.delete('/subjects/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if subject has assignments
+    const assignments = await query('SELECT id FROM assignments WHERE subject_id = ?', [id]);
+    if (assignments.length > 0) {
+      return res.status(400).json({ error: 'Cannot delete subject with existing assignments' });
+    }
+
+    // Remove subject from teachers
+    const teachers = await query('SELECT id, subject_ids FROM teachers WHERE JSON_CONTAINS(subject_ids, JSON_QUOTE(?))', [id]);
+    for (const teacher of teachers) {
+      const subjectIds = JSON.parse(teacher.subject_ids || '[]');
+      const updatedSubjectIds = subjectIds.filter(subjectId => subjectId !== id);
+      await query('UPDATE teachers SET subject_ids = ? WHERE id = ?', [JSON.stringify(updatedSubjectIds), teacher.id]);
+    }
+
+    await query('DELETE FROM subjects WHERE id = ?', [id]);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete subject error:', error);
+    res.status(500).json({ error: 'Failed to delete subject' });
+  }
+});
+
 // Assignments Management
 router.get('/assignments', async (req, res) => {
   try {
