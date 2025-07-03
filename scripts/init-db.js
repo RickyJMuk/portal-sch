@@ -56,11 +56,28 @@ async function initDatabase() {
       `CREATE TABLE IF NOT EXISTS teachers (
         id CHAR(36) PRIMARY KEY,
         user_id CHAR(36) NOT NULL,
-        class_id CHAR(36) NOT NULL,
-        subject_ids TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+      
+      `CREATE TABLE IF NOT EXISTS teacher_classes (
+        id CHAR(36) PRIMARY KEY,
+        teacher_id CHAR(36) NOT NULL,
+        class_id CHAR(36) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE CASCADE,
+        FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_teacher_class (teacher_id, class_id)
+      )`,
+      
+      `CREATE TABLE IF NOT EXISTS teacher_subjects (
+        id CHAR(36) PRIMARY KEY,
+        teacher_id CHAR(36) NOT NULL,
+        subject_id CHAR(36) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE CASCADE,
+        FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_teacher_subject (teacher_id, subject_id)
       )`,
       
       `CREATE TABLE IF NOT EXISTS assignments (
