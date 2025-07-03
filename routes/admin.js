@@ -317,10 +317,18 @@ router.get('/assignments', async (req, res) => {
 // Create Assignment with Questions
 router.post('/assignments', async (req, res) => {
   try {
-    const { title, description, type, class_id, subject_id, deadline, questions } = req.body;
+    const { title, description, type, class_id, subject_id, term, start_date, deadline, questions } = req.body;
 
-    if (!title || !type || !class_id || !subject_id || !questions || questions.length === 0) {
+    if (!title || !type || !class_id || !subject_id || !term || !start_date || !questions || questions.length === 0) {
       return res.status(400).json({ error: 'All fields are required including at least one question' });
+    }
+
+    // Validate start date and deadline
+    const startDateTime = new Date(start_date);
+    const deadlineDateTime = deadline ? new Date(deadline) : null;
+    
+    if (deadlineDateTime && startDateTime >= deadlineDateTime) {
+      return res.status(400).json({ error: 'Start date must be before deadline' });
     }
 
     // Validate questions
@@ -347,8 +355,8 @@ router.post('/assignments', async (req, res) => {
     
     // Create assignment
     await query(
-      'INSERT INTO assignments (id, class_id, subject_id, title, description, type, deadline) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [assignmentId, class_id, subject_id, title, description, type, deadline || null]
+      'INSERT INTO assignments (id, class_id, subject_id, title, description, type, term, start_date, deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [assignmentId, class_id, subject_id, title, description, type, term, start_date, deadline || null]
     );
 
     // Create questions

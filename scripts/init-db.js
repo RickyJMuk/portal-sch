@@ -70,6 +70,8 @@ async function initDatabase() {
         title VARCHAR(255) NOT NULL,
         description TEXT,
         type ENUM('mcq', '2choice') NOT NULL,
+        term ENUM('Term 1', 'Term 2', 'Term 3') NOT NULL,
+        start_date DATETIME NOT NULL,
         deadline DATETIME,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,

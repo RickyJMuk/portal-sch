@@ -77,17 +77,22 @@ async function seedDatabase() {
       await query('INSERT INTO students (id, user_id, class_id) VALUES (?, ?, ?)', student);
     }
 
-    // Create assignments
+    // Create assignments with start dates and terms
     const mathAssignmentId = uuidv4();
     const englishAssignmentId = uuidv4();
     
+    // Set start dates (one current, one future)
+    const currentDate = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(currentDate.getDate() + 7); // 7 days from now
+    
     const assignments = [
-      [mathAssignmentId, classId, mathSubjectId, 'Basic Addition and Subtraction', 'Practice your addition and subtraction skills with these fun questions!', 'mcq', '2024-12-31 23:59:59'],
-      [englishAssignmentId, classId, englishSubjectId, 'Reading Comprehension', 'Answer questions about the story you read in class.', '2choice', '2024-12-31 23:59:59']
+      [mathAssignmentId, classId, mathSubjectId, 'Basic Addition and Subtraction', 'Practice your addition and subtraction skills with these fun questions!', 'mcq', 'Term 1', currentDate.toISOString().slice(0, 19).replace('T', ' '), '2024-12-31 23:59:59'],
+      [englishAssignmentId, classId, englishSubjectId, 'Reading Comprehension', 'Answer questions about the story you read in class.', '2choice', 'Term 1', futureDate.toISOString().slice(0, 19).replace('T', ' '), '2024-12-31 23:59:59']
     ];
 
     for (const assignment of assignments) {
-      await query('INSERT INTO assignments (id, class_id, subject_id, title, description, type, deadline) VALUES (?, ?, ?, ?, ?, ?, ?)', assignment);
+      await query('INSERT INTO assignments (id, class_id, subject_id, title, description, type, term, start_date, deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', assignment);
     }
 
     // Create math questions
@@ -113,7 +118,7 @@ async function seedDatabase() {
       await query('INSERT INTO questions (id, assignment_id, question_text, options, correct_option, marks, question_order) VALUES (?, ?, ?, ?, ?, ?, ?)', question);
     }
 
-    // Create sample submissions
+    // Create sample submissions (only for the math assignment that has started)
     const submission1Id = uuidv4();
     const mathAnswers = {
       [mathQuestions[0][0]]: '8', // Correct

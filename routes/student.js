@@ -150,12 +150,12 @@ router.get('/subjects/:id/assignments', async (req, res) => {
 
     const student = students[0];
 
-    // Get assignments with submission status
+    // Get assignments with submission status - only show assignments that have started
     const assignments = await query(`
       SELECT a.*, sub.id as submission_id, sub.total_score, sub.max_score, sub.submitted_at
       FROM assignments a
       LEFT JOIN submissions sub ON a.id = sub.assignment_id AND sub.student_id = ?
-      WHERE a.subject_id = ?
+      WHERE a.subject_id = ? AND a.start_date <= NOW()
       ORDER BY a.created_at DESC
     `, [student.id, subjectId]);
 
@@ -213,6 +213,15 @@ router.get('/assignments/:id/take', async (req, res) => {
 
     const assignment = assignments[0];
 
+    // Check if assignment has started
+    if (new Date() < new Date(assignment.start_date)) {
+      return res.render('error', {
+        title: 'Assignment Not Available',
+        error: `This assignment will be available on ${new Date(assignment.start_date).toLocaleString()}`,
+        statusCode: 403
+      });
+    }
+
     // Check deadline
     if (assignment.deadline && new Date() > new Date(assignment.deadline)) {
       return res.render('error', {
@@ -264,6 +273,31 @@ router.post('/assignments/:id/submit', async (req, res) => {
 
     if (existingSubmissions.length > 0) {
       return res.redirect(`/student/submissions/${existingSubmissions[0].id}/feedback`);
+    }
+
+    // Get assignment to check validity period
+    const assignments = await query(`
+      SELECT * FROM assignments WHERE id = ?
+    `, [assignmentId]);
+
+    const assignment = assignments[0];
+
+    // Check if assignment is within valid period
+    const now = new Date();
+    if (now < new Date(assignment.start_date)) {
+      return res.render('error', {
+        title: 'Assignment Not Available',
+        error: 'This assignment has not started yet',
+        statusCode: 403
+      });
+    }
+
+    if (assignment.deadline && now > new Date(assignment.deadline)) {
+      return res.render('error', {
+        title: 'Assignment Expired',
+        error: 'This assignment deadline has passed',
+        statusCode: 403
+      });
     }
 
     // Get questions

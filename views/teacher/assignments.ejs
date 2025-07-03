@@ -1,0 +1,100 @@
+
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 fw-bold text-primary">
+                <i class="fas fa-tasks me-2"></i>My Assignments
+            </h1>
+            <p class="text-muted"><%= className %> - View and manage your assignments</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <% if (assignments.length > 0) { %>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Assignment</th>
+                                <th>Subject</th>
+                                <th>Type</th>
+                                <th>Term</th>
+                                <th>Start Date</th>
+                                <th>Deadline</th>
+                                <th>Questions</th>
+                                <th>Submissions</th>
+                                <th>Avg Score</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% assignments.forEach(assignment => { %>
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <div class="fw-semibold"><%= assignment.title %></div>
+                                            <% if (assignment.description) { %>
+                                                <small class="text-muted"><%= assignment.description.substring(0, 50) %>...</small>
+                                            <% } %>
+                                        </div>
+                                    </td>
+                                    <td><%= assignment.subject_name %></td>
+                                    <td>
+                                        <span class="badge bg-<%= assignment.type === 'mcq' ? 'info' : 'warning' %>">
+                                            <%= assignment.type.toUpperCase() %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary"><%= assignment.term %></span>
+                                    </td>
+                                    <td>
+                                        <span class="text-<%= new Date(assignment.start_date) > new Date() ? 'warning' : 'success' %>">
+                                            <%= new Date(assignment.start_date).toLocaleDateString() %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <% if (assignment.deadline) { %>
+                                            <span class="text-<%= new Date(assignment.deadline) < new Date() ? 'danger' : 'success' %>">
+                                                <%= new Date(assignment.deadline).toLocaleDateString() %>
+                                            </span>
+                                        <% } else { %>
+                                            <span class="text-muted">No deadline</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary"><%= assignment.question_count %></span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success"><%= assignment.submission_count %></span>
+                                    </td>
+                                    <td>
+                                        <% if (assignment.submission_count > 0) { %>
+                                            <span class="text-<%= assignment.avg_score >= 70 ? 'success' : assignment.avg_score >= 50 ? 'warning' : 'danger' %>">
+                                                <%= Math.round(assignment.avg_score) %>%
+                                            </span>
+                                        <% } else { %>
+                                            <span class="text-muted">-</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <a href="/teacher/assignments/<%= assignment.id %>" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye me-1"></i>View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="text-center py-5">
+                    <i class="fas fa-tasks fs-1 text-muted mb-3"></i>
+                    <h5 class="text-muted">No Assignments Found</h5>
+                    <p class="text-muted">You don't have any assignments for your subjects yet.</p>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>

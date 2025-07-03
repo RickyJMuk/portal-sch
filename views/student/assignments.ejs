@@ -26,9 +26,13 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <h5 class="card-title fw-bold"><%= assignment.title %></h5>
-                                <span class="badge bg-<%= assignment.type === 'mcq' ? 'info' : 'warning' %>">
-                                    <%= assignment.type.toUpperCase() %>
-                                </span>
+                                <div>
+                                    <span class="badge bg-<%= assignment.type === 'mcq' ? 'info' : 'warning' %> mb-1">
+                                        <%= assignment.type.toUpperCase() %>
+                                    </span>
+                                    <br>
+                                    <span class="badge bg-secondary"><%= assignment.term %></span>
+                                </div>
                             </div>
                             
                             <% if (assignment.description) { %>
@@ -37,14 +41,27 @@
                                 </p>
                             <% } %>
                             
-                            <% if (assignment.deadline) { %>
-                                <div class="mb-3">
-                                    <small class="text-<%= new Date(assignment.deadline) < new Date() ? 'danger' : 'warning' %>">
+                            <div class="mb-3">
+                                <% if (new Date(assignment.start_date) > new Date()) { %>
+                                    <small class="text-warning">
                                         <i class="fas fa-clock me-1"></i>
+                                        Starts: <%= new Date(assignment.start_date).toLocaleDateString() %>
+                                    </small>
+                                <% } else { %>
+                                    <small class="text-success">
+                                        <i class="fas fa-play me-1"></i>
+                                        Available since: <%= new Date(assignment.start_date).toLocaleDateString() %>
+                                    </small>
+                                <% } %>
+                                
+                                <% if (assignment.deadline) { %>
+                                    <br>
+                                    <small class="text-<%= new Date(assignment.deadline) < new Date() ? 'danger' : 'warning' %>">
+                                        <i class="fas fa-flag me-1"></i>
                                         Due: <%= new Date(assignment.deadline).toLocaleDateString() %>
                                     </small>
-                                </div>
-                            <% } %>
+                                <% } %>
+                            </div>
                             
                             <% if (assignment.submission_id) { %>
                                 <!-- Already submitted -->
@@ -61,7 +78,18 @@
                                 </div>
                             <% } else { %>
                                 <!-- Not submitted yet -->
-                                <% if (assignment.deadline && new Date(assignment.deadline) < new Date()) { %>
+                                <% if (new Date(assignment.start_date) > new Date()) { %>
+                                    <div class="alert alert-warning mb-3">
+                                        <i class="fas fa-clock me-2"></i>
+                                        <strong>Not Available Yet</strong><br>
+                                        This assignment will be available on <%= new Date(assignment.start_date).toLocaleDateString() %>.
+                                    </div>
+                                    <div class="d-grid">
+                                        <button class="btn btn-secondary" disabled>
+                                            <i class="fas fa-clock me-2"></i>Starts Soon
+                                        </button>
+                                    </div>
+                                <% } else if (assignment.deadline && new Date(assignment.deadline) < new Date()) { %>
                                     <div class="alert alert-danger mb-3">
                                         <i class="fas fa-exclamation-triangle me-2"></i>
                                         <strong>Deadline Passed</strong><br>

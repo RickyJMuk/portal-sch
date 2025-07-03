@@ -109,10 +109,22 @@ router.get('/students', async (req, res) => {
       ORDER BY u.full_name
     `, [teacher.class_id]);
 
+    // Get assignments for the teacher's class
+    const assignments = await query(`
+      SELECT a.*, s.name as subject_name,
+        (SELECT COUNT(*) FROM questions q WHERE q.assignment_id = a.id) as question_count,
+        (SELECT COUNT(*) FROM submissions sub WHERE sub.assignment_id = a.id) as submission_count
+      FROM assignments a
+      JOIN subjects s ON a.subject_id = s.id
+      WHERE a.class_id = ?
+      ORDER BY a.deadline DESC
+    `, [teacher.class_id]);
+
     res.render('teacher/students', {
       title: 'Students',
       students,
-      className: teacher.class_name
+      className: teacher.class_name,
+      assignments
     });
   } catch (error) {
     console.error('Students page error:', error);

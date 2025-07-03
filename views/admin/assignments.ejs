@@ -27,9 +27,11 @@
                             <th>Class</th>
                             <th>Subject</th>
                             <th>Type</th>
+                            <th>Term</th>
+                            <th>Start Date</th>
+                            <th>Deadline</th>
                             <th>Questions</th>
                             <th>Submissions</th>
-                            <th>Deadline</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -52,10 +54,12 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="badge bg-secondary"><%= assignment.question_count %></span>
+                                    <span class="badge bg-secondary"><%= assignment.term %></span>
                                 </td>
                                 <td>
-                                    <span class="badge bg-success"><%= assignment.submission_count %></span>
+                                    <span class="text-<%= new Date(assignment.start_date) > new Date() ? 'warning' : 'success' %>">
+                                        <%= new Date(assignment.start_date).toLocaleDateString() %>
+                                    </span>
                                 </td>
                                 <td>
                                     <% if (assignment.deadline) { %>
@@ -65,6 +69,12 @@
                                     <% } else { %>
                                         <span class="text-muted">No deadline</span>
                                     <% } %>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary"><%= assignment.question_count %></span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success"><%= assignment.submission_count %></span>
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
@@ -124,7 +134,7 @@
                     </div>
                     
                     <div class="row mb-4">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="mb-3">
                                 <label for="class_id" class="form-label">Class</label>
                                 <select class="form-select" name="class_id" id="assignmentClassSelect" required>
@@ -135,7 +145,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="mb-3">
                                 <label for="subject_id" class="form-label">Subject</label>
                                 <select class="form-select" name="subject_id" id="assignmentSubjectSelect" required>
@@ -143,7 +153,27 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="term" class="form-label">Term</label>
+                                <select class="form-select" name="term" required>
+                                    <option value="">Select Term</option>
+                                    <option value="Term 1">Term 1</option>
+                                    <option value="Term 2">Term 2</option>
+                                    <option value="Term 3">Term 3</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="start_date" class="form-label">Start Date & Time</label>
+                                <input type="datetime-local" class="form-control" name="start_date" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="deadline" class="form-label">Deadline (Optional)</label>
                                 <input type="datetime-local" class="form-control" name="deadline">
@@ -355,6 +385,12 @@ document.getElementById('addAssignmentForm').addEventListener('submit', async fu
     const formData = new FormData(this);
     const data = Object.fromEntries(formData);
     
+    // Validate start date and deadline
+    if (data.deadline && new Date(data.start_date) >= new Date(data.deadline)) {
+        alert('Start date must be before deadline');
+        return;
+    }
+    
     // Collect questions
     const questions = [];
     const questionCards = document.querySelectorAll('#questionsContainer .card');
@@ -421,5 +457,13 @@ document.getElementById('addAssignmentModal').addEventListener('hidden.bs.modal'
     document.getElementById('questionsContainer').innerHTML = '';
     document.getElementById('assignmentSubjectSelect').innerHTML = '<option value="">Select Subject</option>';
     questionCount = 0;
+});
+
+// Set minimum start date to current date/time
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    document.querySelector('input[name="start_date"]').min = localDateTime;
+    document.querySelector('input[name="deadline"]').min = localDateTime;
 });
 </script>

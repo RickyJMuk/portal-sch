@@ -17,8 +17,8 @@ const PORT = process.env.PORT || 3000;
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(expressLayouts);           // Tell express to use layouts
-app.set('layout', 'layout');       // Default layout file in /views/layout.ejs
+app.use(expressLayouts);           // ✅ Tell express to use layouts
+app.set('layout', 'layout');       // ✅ Default layout file in /views/layout.ejs
 
 // Session configuration
 app.use(session({
