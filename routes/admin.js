@@ -48,25 +48,30 @@ router.get('/users', async (req, res) => {
   try {
     const users = await query(`
       SELECT u.*, 
-        CASE 
-          WHEN u.role = 'student' THEN c.name
-          WHEN u.role = 'teacher' THEN tc.name
-          ELSE NULL
-        END as class_name
+        GROUP_CONCAT(DISTINCT c.name) as class_names
       FROM users u
       LEFT JOIN students s ON u.id = s.user_id
       LEFT JOIN classes c ON s.class_id = c.id
       LEFT JOIN teachers t ON u.id = t.user_id
-      LEFT JOIN classes tc ON t.class_id = tc.id
+      LEFT JOIN teacher_classes tc ON t.id = tc.teacher_id
+      LEFT JOIN classes tc_class ON tc.class_id = tc_class.id
+      GROUP BY u.id
       ORDER BY u.role, u.full_name
     `);
 
     const classes = await query('SELECT * FROM classes ORDER BY level, name');
+    const subjects = await query(`
+      SELECT s.*, c.name as class_name 
+      FROM subjects s 
+      JOIN classes c ON s.class_id = c.id 
+      ORDER BY c.level, c.name, s.name
+    `);
 
     res.render('admin/users', {
       title: 'User Management',
       users,
-      classes
+      classes,
+      subjects
     });
   } catch (error) {
     console.error('Users page error:', error);
@@ -81,7 +86,7 @@ router.get('/users', async (req, res) => {
 // Create User
 router.post('/users', async (req, res) => {
   try {
-    const { full_name, email, password, role, class_id } = req.body;
+    const { full_name, email, password, role, class_ids, subject_ids } = req.body;
 
     // Validate input
     if (!full_name || !email || !password || !role) {
@@ -103,18 +108,211 @@ router.post('/users', async (req, res) => {
       [userId, full_name, email, hashedPassword, role, true]);
 
     // Create role-specific record
-    if (role === 'student' && class_id) {
+    if (role === 'student' && class_ids) {
+      const studentId = uuidv4();
       await query('INSERT INTO students (id, user_id, class_id) VALUES (?, ?, ?)', 
-        [uuidv4(), userId, class_id]);
-    } else if (role === 'teacher' && class_id) {
-      await query('INSERT INTO teachers (id, user_id, class_id, subject_ids) VALUES (?, ?, ?, ?)', 
-        [uuidv4(), userId, class_id, JSON.stringify([])]);
+        [studentId, userId, class_ids]);
+    } else if (role === 'teacher') {
+      const teacherId = uuidv4();
+      await query('INSERT INTO teachers (id, user_id) VALUES (?, ?)', 
+        [teacherId, userId]);
+
+      // Add teacher-class relationships
+      if (class_ids && Array.isArray(class_ids)) {
+        for (const classId of class_ids) {
+          await query('INSERT INTO teacher_classes (id, teacher_id, class_id) VALUES (?, ?, ?)', 
+            [uuidv4(), teacherId, classId]);
+        }
+      }
+
+      // Add teacher-subject relationships
+      if (subject_ids && Array.isArray(subject_ids)) {
+        for (const subjectId of subject_ids) {
+          await query('INSERT INTO teacher_subjects (id, teacher_id, subject_id) VALUES (?, ?, ?)', 
+            [uuidv4(), teacherId, subjectId]);
+        }
+      }
     }
 
     res.json({ success: true });
   } catch (error) {
     console.error('Create user error:', error);
     res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+// Get User Details for Edit
+router.get('/users/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // Get user basic info
+    const users = await query('SELECT * FROM users WHERE id = ?', [userId]);
+    if (users.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = users[0];
+    let userDetails = { ...user };
+
+    if (user.role === 'student') {
+      const students = await query('SELECT class_id FROM students WHERE user_id = ?', [userId]);
+      userDetails.class_id = students.length > 0 ? students[0].class_id : null;
+    } else if (user.role === 'teacher') {
+      const teachers = await query('SELECT id FROM teachers WHERE user_id = ?', [userId]);
+      if (teachers.length > 0) {
+        const teacherId = teachers[0].id;
+        
+        // Get teacher classes
+        const teacherClasses = await query('SELECT class_id FROM teacher_classes WHERE teacher_id = ?', [teacherId]);
+        userDetails.class_ids = teacherClasses.map(tc => tc.class_id);
+        
+        // Get teacher subjects
+        const teacherSubjects = await query('SELECT subject_id FROM teacher_subjects WHERE teacher_id = ?', [teacherId]);
+        userDetails.subject_ids = teacherSubjects.map(ts => ts.subject_id);
+      }
+    }
+
+    res.json(userDetails);
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ error: 'Failed to get user details' });
+  }
+});
+
+// Update User
+router.put('/users/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { full_name, email, password, role, class_ids, subject_ids } = req.body;
+
+    // Validate input
+    if (!full_name || !email || !role) {
+      return res.status(400).json({ error: 'Name, email, and role are required' });
+    }
+
+    // Check if email already exists for other users
+    const existingUsers = await query('SELECT id FROM users WHERE email = ? AND id != ?', [email, userId]);
+    if (existingUsers.length > 0) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+
+    // Update user basic info
+    let updateQuery = 'UPDATE users SET full_name = ?, email = ?, role = ? WHERE id = ?';
+    let updateParams = [full_name, email, role, userId];
+
+    // Update password if provided
+    if (password && password.trim() !== '') {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updateQuery = 'UPDATE users SET full_name = ?, email = ?, password = ?, role = ? WHERE id = ?';
+      updateParams = [full_name, email, hashedPassword, role, userId];
+    }
+
+    await query(updateQuery, updateParams);
+
+    // Handle role-specific updates
+    if (role === 'student') {
+      // Remove teacher records if changing from teacher
+      const teachers = await query('SELECT id FROM teachers WHERE user_id = ?', [userId]);
+      if (teachers.length > 0) {
+        const teacherId = teachers[0].id;
+        await query('DELETE FROM teacher_classes WHERE teacher_id = ?', [teacherId]);
+        await query('DELETE FROM teacher_subjects WHERE teacher_id = ?', [teacherId]);
+        await query('DELETE FROM teachers WHERE id = ?', [teacherId]);
+      }
+
+      // Update or create student record
+      const students = await query('SELECT id FROM students WHERE user_id = ?', [userId]);
+      if (students.length > 0) {
+        await query('UPDATE students SET class_id = ? WHERE user_id = ?', [class_ids, userId]);
+      } else {
+        await query('INSERT INTO students (id, user_id, class_id) VALUES (?, ?, ?)', 
+          [uuidv4(), userId, class_ids]);
+      }
+    } else if (role === 'teacher') {
+      // Remove student records if changing from student
+      await query('DELETE FROM students WHERE user_id = ?', [userId]);
+
+      // Get or create teacher record
+      let teachers = await query('SELECT id FROM teachers WHERE user_id = ?', [userId]);
+      let teacherId;
+      
+      if (teachers.length === 0) {
+        teacherId = uuidv4();
+        await query('INSERT INTO teachers (id, user_id) VALUES (?, ?)', [teacherId, userId]);
+      } else {
+        teacherId = teachers[0].id;
+      }
+
+      // Update teacher classes
+      await query('DELETE FROM teacher_classes WHERE teacher_id = ?', [teacherId]);
+      if (class_ids && Array.isArray(class_ids)) {
+        for (const classId of class_ids) {
+          await query('INSERT INTO teacher_classes (id, teacher_id, class_id) VALUES (?, ?, ?)', 
+            [uuidv4(), teacherId, classId]);
+        }
+      }
+
+      // Update teacher subjects
+      await query('DELETE FROM teacher_subjects WHERE teacher_id = ?', [teacherId]);
+      if (subject_ids && Array.isArray(subject_ids)) {
+        for (const subjectId of subject_ids) {
+          await query('INSERT INTO teacher_subjects (id, teacher_id, subject_id) VALUES (?, ?, ?)', 
+            [uuidv4(), teacherId, subjectId]);
+        }
+      }
+    } else if (role === 'admin') {
+      // Remove both student and teacher records if changing to admin
+      await query('DELETE FROM students WHERE user_id = ?', [userId]);
+      const teachers = await query('SELECT id FROM teachers WHERE user_id = ?', [userId]);
+      if (teachers.length > 0) {
+        const teacherId = teachers[0].id;
+        await query('DELETE FROM teacher_classes WHERE teacher_id = ?', [teacherId]);
+        await query('DELETE FROM teacher_subjects WHERE teacher_id = ?', [teacherId]);
+        await query('DELETE FROM teachers WHERE id = ?', [teacherId]);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+// Delete User
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // Check if user exists
+    const users = await query('SELECT * FROM users WHERE id = ?', [userId]);
+    if (users.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = users[0];
+
+    // Prevent deleting the current admin user
+    if (user.role === 'admin' && userId === req.session.user.id) {
+      return res.status(400).json({ error: 'Cannot delete your own admin account' });
+    }
+
+    // Check for dependencies
+    if (user.role === 'student') {
+      const submissions = await query('SELECT COUNT(*) as count FROM submissions s JOIN students st ON s.student_id = st.id WHERE st.user_id = ?', [userId]);
+      if (submissions[0].count > 0) {
+        return res.status(400).json({ error: 'Cannot delete student with existing submissions' });
+      }
+    }
+
+    // Delete user (cascading will handle related records)
+    await query('DELETE FROM users WHERE id = ?', [userId]);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
   }
 });
 
@@ -171,11 +369,11 @@ router.get('/subjects', async (req, res) => {
     const subjects = await query(`
       SELECT s.*, c.name as class_name, c.level,
         COUNT(DISTINCT a.id) as assignment_count,
-        COUNT(DISTINCT t.id) as teacher_count
+        COUNT(DISTINCT ts.teacher_id) as teacher_count
       FROM subjects s
       JOIN classes c ON s.class_id = c.id
       LEFT JOIN assignments a ON s.id = a.subject_id
-      LEFT JOIN teachers t ON JSON_CONTAINS(t.subject_ids, JSON_QUOTE(s.id))
+      LEFT JOIN teacher_subjects ts ON s.id = ts.subject_id
       GROUP BY s.id
       ORDER BY c.level, c.name, s.name
     `);
@@ -265,12 +463,7 @@ router.delete('/subjects/:id', async (req, res) => {
     }
 
     // Remove subject from teachers
-    const teachers = await query('SELECT id, subject_ids FROM teachers WHERE JSON_CONTAINS(subject_ids, JSON_QUOTE(?))', [id]);
-    for (const teacher of teachers) {
-      const subjectIds = JSON.parse(teacher.subject_ids || '[]');
-      const updatedSubjectIds = subjectIds.filter(subjectId => subjectId !== id);
-      await query('UPDATE teachers SET subject_ids = ? WHERE id = ?', [JSON.stringify(updatedSubjectIds), teacher.id]);
-    }
+    await query('DELETE FROM teacher_subjects WHERE subject_id = ?', [id]);
 
     await query('DELETE FROM subjects WHERE id = ?', [id]);
 

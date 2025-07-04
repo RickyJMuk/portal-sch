@@ -26,7 +26,7 @@
                             <th>Name</th>
                             <th>Email</th>
                             <th>Role</th>
-                            <th>Class</th>
+                            <th>Classes/Subjects</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -49,7 +49,11 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <%= user.class_name || '-' %>
+                                    <% if (user.class_names) { %>
+                                        <small class="text-muted"><%= user.class_names %></small>
+                                    <% } else { %>
+                                        <small class="text-muted">-</small>
+                                    <% } %>
                                 </td>
                                 <td>
                                     <span class="badge bg-<%= user.is_whitelisted ? 'success' : 'warning' %>">
@@ -58,10 +62,14 @@
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-primary" title="Edit">
+                                        <button class="btn btn-outline-primary" 
+                                                onclick="editUser('<%= user.id %>')" 
+                                                title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <button class="btn btn-outline-danger" title="Delete">
+                                        <button class="btn btn-outline-danger" 
+                                                onclick="deleteUser('<%= user.id %>', '<%= user.full_name %>')" 
+                                                title="Delete">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
@@ -77,7 +85,7 @@
 
 <!-- Add User Modal -->
 <div class="modal fade" id="addUserModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Add New User</h5>
@@ -85,35 +93,88 @@
             </div>
             <form id="addUserForm">
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="full_name" class="form-label">Full Name</label>
-                        <input type="text" class="form-control" name="full_name" required>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="full_name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" name="full_name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" name="email" required>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" name="email" required>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" name="password" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="role" class="form-label">Role</label>
+                                <select class="form-select" name="role" id="roleSelect" required>
+                                    <option value="">Select Role</option>
+                                    <option value="admin">Administrator</option>
+                                    <option value="teacher">Teacher</option>
+                                    <option value="student">Student</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" name="password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="role" class="form-label">Role</label>
-                        <select class="form-select" name="role" id="roleSelect" required>
-                            <option value="">Select Role</option>
-                            <option value="admin">Administrator</option>
-                            <option value="teacher">Teacher</option>
-                            <option value="student">Student</option>
-                        </select>
-                    </div>
-                    <div class="mb-3" id="classSelectDiv" style="display: none;">
-                        <label for="class_id" class="form-label">Class</label>
-                        <select class="form-select" name="class_id" id="classSelect">
+
+                    <!-- Student Class Selection -->
+                    <div class="mb-3" id="studentClassDiv" style="display: none;">
+                        <label class="form-label">Class</label>
+                        <select class="form-select" name="class_ids" id="studentClassSelect">
                             <option value="">Select Class</option>
                             <% classes.forEach(cls => { %>
                                 <option value="<%= cls.id %>"><%= cls.name %> (<%= cls.level %>)</option>
                             <% }); %>
                         </select>
+                    </div>
+
+                    <!-- Teacher Class Selection -->
+                    <div class="mb-3" id="teacherClassDiv" style="display: none;">
+                        <label class="form-label">Classes (Select multiple)</label>
+                        <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                            <% classes.forEach(cls => { %>
+                                <div class="form-check">
+                                    <input class="form-check-input teacher-class-checkbox" 
+                                           type="checkbox" 
+                                           name="class_ids" 
+                                           value="<%= cls.id %>" 
+                                           id="class_<%= cls.id %>">
+                                    <label class="form-check-label" for="class_<%= cls.id %>">
+                                        <%= cls.name %> (<%= cls.level %>)
+                                    </label>
+                                </div>
+                            <% }); %>
+                        </div>
+                    </div>
+
+                    <!-- Teacher Subject Selection -->
+                    <div class="mb-3" id="teacherSubjectDiv" style="display: none;">
+                        <label class="form-label">Subjects (Select multiple)</label>
+                        <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                            <% subjects.forEach(subject => { %>
+                                <div class="form-check">
+                                    <input class="form-check-input teacher-subject-checkbox" 
+                                           type="checkbox" 
+                                           name="subject_ids" 
+                                           value="<%= subject.id %>" 
+                                           id="subject_<%= subject.id %>">
+                                    <label class="form-check-label" for="subject_<%= subject.id %>">
+                                        <%= subject.name %> - <%= subject.class_name %>
+                                    </label>
+                                </div>
+                            <% }); %>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -125,28 +186,189 @@
     </div>
 </div>
 
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId" name="id">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editFullName" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="editFullName" name="full_name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="editEmail" name="email" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editPassword" class="form-label">Password (leave blank to keep current)</label>
+                                <input type="password" class="form-control" id="editPassword" name="password">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editRole" class="form-label">Role</label>
+                                <select class="form-select" id="editRole" name="role" required>
+                                    <option value="">Select Role</option>
+                                    <option value="admin">Administrator</option>
+                                    <option value="teacher">Teacher</option>
+                                    <option value="student">Student</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Class Selection -->
+                    <div class="mb-3" id="editStudentClassDiv" style="display: none;">
+                        <label class="form-label">Class</label>
+                        <select class="form-select" name="class_ids" id="editStudentClassSelect">
+                            <option value="">Select Class</option>
+                            <% classes.forEach(cls => { %>
+                                <option value="<%= cls.id %>"><%= cls.name %> (<%= cls.level %>)</option>
+                            <% }); %>
+                        </select>
+                    </div>
+
+                    <!-- Teacher Class Selection -->
+                    <div class="mb-3" id="editTeacherClassDiv" style="display: none;">
+                        <label class="form-label">Classes (Select multiple)</label>
+                        <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                            <% classes.forEach(cls => { %>
+                                <div class="form-check">
+                                    <input class="form-check-input edit-teacher-class-checkbox" 
+                                           type="checkbox" 
+                                           name="class_ids" 
+                                           value="<%= cls.id %>" 
+                                           id="edit_class_<%= cls.id %>">
+                                    <label class="form-check-label" for="edit_class_<%= cls.id %>">
+                                        <%= cls.name %> (<%= cls.level %>)
+                                    </label>
+                                </div>
+                            <% }); %>
+                        </div>
+                    </div>
+
+                    <!-- Teacher Subject Selection -->
+                    <div class="mb-3" id="editTeacherSubjectDiv" style="display: none;">
+                        <label class="form-label">Subjects (Select multiple)</label>
+                        <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                            <% subjects.forEach(subject => { %>
+                                <div class="form-check">
+                                    <input class="form-check-input edit-teacher-subject-checkbox" 
+                                           type="checkbox" 
+                                           name="subject_ids" 
+                                           value="<%= subject.id %>" 
+                                           id="edit_subject_<%= subject.id %>">
+                                    <label class="form-check-label" for="edit_subject_<%= subject.id %>">
+                                        <%= subject.name %> - <%= subject.class_name %>
+                                    </label>
+                                </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
-// Show/hide class select based on role
+// Show/hide fields based on role selection for Add User
 document.getElementById('roleSelect').addEventListener('change', function() {
-    const classDiv = document.getElementById('classSelectDiv');
-    const classSelect = document.getElementById('classSelect');
+    const role = this.value;
+    const studentDiv = document.getElementById('studentClassDiv');
+    const teacherClassDiv = document.getElementById('teacherClassDiv');
+    const teacherSubjectDiv = document.getElementById('teacherSubjectDiv');
+    const studentSelect = document.getElementById('studentClassSelect');
     
-    if (this.value === 'student' || this.value === 'teacher') {
-        classDiv.style.display = 'block';
-        classSelect.required = true;
+    // Hide all role-specific divs
+    studentDiv.style.display = 'none';
+    teacherClassDiv.style.display = 'none';
+    teacherSubjectDiv.style.display = 'none';
+    
+    // Clear selections
+    studentSelect.value = '';
+    document.querySelectorAll('.teacher-class-checkbox').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.teacher-subject-checkbox').forEach(cb => cb.checked = false);
+    
+    // Show relevant divs based on role
+    if (role === 'student') {
+        studentDiv.style.display = 'block';
+        studentSelect.required = true;
+    } else if (role === 'teacher') {
+        teacherClassDiv.style.display = 'block';
+        teacherSubjectDiv.style.display = 'block';
+        studentSelect.required = false;
     } else {
-        classDiv.style.display = 'none';
-        classSelect.required = false;
-        classSelect.value = '';
+        studentSelect.required = false;
     }
 });
 
-// Handle form submission
+// Show/hide fields based on role selection for Edit User
+document.getElementById('editRole').addEventListener('change', function() {
+    const role = this.value;
+    const studentDiv = document.getElementById('editStudentClassDiv');
+    const teacherClassDiv = document.getElementById('editTeacherClassDiv');
+    const teacherSubjectDiv = document.getElementById('editTeacherSubjectDiv');
+    const studentSelect = document.getElementById('editStudentClassSelect');
+    
+    // Hide all role-specific divs
+    studentDiv.style.display = 'none';
+    teacherClassDiv.style.display = 'none';
+    teacherSubjectDiv.style.display = 'none';
+    
+    // Show relevant divs based on role
+    if (role === 'student') {
+        studentDiv.style.display = 'block';
+        studentSelect.required = true;
+    } else if (role === 'teacher') {
+        teacherClassDiv.style.display = 'block';
+        teacherSubjectDiv.style.display = 'block';
+        studentSelect.required = false;
+    } else {
+        studentSelect.required = false;
+    }
+});
+
+// Handle Add User form submission
 document.getElementById('addUserForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const formData = new FormData(this);
-    const data = Object.fromEntries(formData);
+    const data = {};
+    
+    // Get basic form data
+    for (let [key, value] of formData.entries()) {
+        if (key === 'class_ids' || key === 'subject_ids') {
+            if (!data[key]) data[key] = [];
+            data[key].push(value);
+        } else {
+            data[key] = value;
+        }
+    }
+    
+    // For students, convert class_ids array to single value
+    if (data.role === 'student' && data.class_ids && data.class_ids.length > 0) {
+        data.class_ids = data.class_ids[0];
+    }
     
     try {
         const response = await fetch('/admin/users', {
@@ -167,5 +389,140 @@ document.getElementById('addUserForm').addEventListener('submit', async function
     } catch (error) {
         alert('An error occurred while adding the user');
     }
+});
+
+// Edit User function
+async function editUser(userId) {
+    try {
+        const response = await fetch(`/admin/users/${userId}`);
+        const user = await response.json();
+        
+        if (user.error) {
+            alert(user.error);
+            return;
+        }
+        
+        // Populate form fields
+        document.getElementById('editUserId').value = user.id;
+        document.getElementById('editFullName').value = user.full_name;
+        document.getElementById('editEmail').value = user.email;
+        document.getElementById('editPassword').value = '';
+        document.getElementById('editRole').value = user.role;
+        
+        // Trigger role change to show appropriate fields
+        document.getElementById('editRole').dispatchEvent(new Event('change'));
+        
+        // Set class/subject selections based on role
+        if (user.role === 'student' && user.class_id) {
+            document.getElementById('editStudentClassSelect').value = user.class_id;
+        } else if (user.role === 'teacher') {
+            // Set teacher classes
+            if (user.class_ids) {
+                user.class_ids.forEach(classId => {
+                    const checkbox = document.getElementById(`edit_class_${classId}`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+            
+            // Set teacher subjects
+            if (user.subject_ids) {
+                user.subject_ids.forEach(subjectId => {
+                    const checkbox = document.getElementById(`edit_subject_${subjectId}`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+        }
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+        modal.show();
+        
+    } catch (error) {
+        alert('Failed to load user details');
+    }
+}
+
+// Handle Edit User form submission
+document.getElementById('editUserForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {};
+    
+    // Get basic form data
+    for (let [key, value] of formData.entries()) {
+        if (key === 'class_ids' || key === 'subject_ids') {
+            if (!data[key]) data[key] = [];
+            data[key].push(value);
+        } else {
+            data[key] = value;
+        }
+    }
+    
+    // For students, convert class_ids array to single value
+    if (data.role === 'student' && data.class_ids && data.class_ids.length > 0) {
+        data.class_ids = data.class_ids[0];
+    }
+    
+    const userId = data.id;
+    
+    try {
+        const response = await fetch(`/admin/users/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            location.reload();
+        } else {
+            alert(result.error || 'Failed to update user');
+        }
+    } catch (error) {
+        alert('An error occurred while updating the user');
+    }
+});
+
+// Delete User function
+function deleteUser(userId, userName) {
+    if (confirm(`Are you sure you want to delete the user "${userName}"? This action cannot be undone.`)) {
+        fetch(`/admin/users/${userId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                location.reload();
+            } else {
+                alert(result.error || 'Failed to delete user');
+            }
+        })
+        .catch(error => {
+            alert('An error occurred while deleting the user');
+        });
+    }
+}
+
+// Reset forms when modals are closed
+document.getElementById('addUserModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('addUserForm').reset();
+    document.getElementById('studentClassDiv').style.display = 'none';
+    document.getElementById('teacherClassDiv').style.display = 'none';
+    document.getElementById('teacherSubjectDiv').style.display = 'none';
+});
+
+document.getElementById('editUserModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('editUserForm').reset();
+    document.getElementById('editStudentClassDiv').style.display = 'none';
+    document.getElementById('editTeacherClassDiv').style.display = 'none';
+    document.getElementById('editTeacherSubjectDiv').style.display = 'none';
+    
+    // Clear all checkboxes
+    document.querySelectorAll('.edit-teacher-class-checkbox').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.edit-teacher-subject-checkbox').forEach(cb => cb.checked = false);
 });
 </script>

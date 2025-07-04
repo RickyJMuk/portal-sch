@@ -12,7 +12,7 @@ async function seedDatabase() {
 
     // Clear existing data
     await query('SET FOREIGN_KEY_CHECKS = 0');
-    const tables = ['marks', 'submissions', 'questions', 'assignments', 'teachers', 'students', 'subjects', 'classes', 'users'];
+    const tables = ['marks', 'submissions', 'questions', 'assignments', 'teacher_subjects', 'teacher_classes', 'teachers', 'students', 'subjects', 'classes', 'users'];
     for (const table of tables) {
       await query(`DELETE FROM ${table}`);
     }
@@ -26,9 +26,12 @@ async function seedDatabase() {
     const student2Id = uuidv4();
     const student3Id = uuidv4();
     
-    const classId = uuidv4();
-    const mathSubjectId = uuidv4();
-    const englishSubjectId = uuidv4();
+    const class1Id = uuidv4();
+    const class2Id = uuidv4();
+    const mathSubject1Id = uuidv4();
+    const englishSubject1Id = uuidv4();
+    const mathSubject2Id = uuidv4();
+    const englishSubject2Id = uuidv4();
     
     const teacherRecord1Id = uuidv4();
     const teacherRecord2Id = uuidv4();
@@ -53,24 +56,35 @@ async function seedDatabase() {
       await query('INSERT INTO users (id, full_name, email, password, role, is_whitelisted) VALUES (?, ?, ?, ?, ?, ?)', user);
     }
 
-    // Insert class
-    await query('INSERT INTO classes (id, name, level) VALUES (?, ?, ?)', [classId, 'Grade 3A', 'Grade 3']);
+    // Insert classes
+    await query('INSERT INTO classes (id, name, level) VALUES (?, ?, ?)', [class1Id, 'Grade 3A', 'Grade 3']);
+    await query('INSERT INTO classes (id, name, level) VALUES (?, ?, ?)', [class2Id, 'Grade 3B', 'Grade 3']);
 
     // Insert subjects
-    await query('INSERT INTO subjects (id, name, class_id) VALUES (?, ?, ?)', [mathSubjectId, 'Mathematics', classId]);
-    await query('INSERT INTO subjects (id, name, class_id) VALUES (?, ?, ?)', [englishSubjectId, 'English', classId]);
+    await query('INSERT INTO subjects (id, name, class_id) VALUES (?, ?, ?)', [mathSubject1Id, 'Mathematics', class1Id]);
+    await query('INSERT INTO subjects (id, name, class_id) VALUES (?, ?, ?)', [englishSubject1Id, 'English', class1Id]);
+    await query('INSERT INTO subjects (id, name, class_id) VALUES (?, ?, ?)', [mathSubject2Id, 'Mathematics', class2Id]);
+    await query('INSERT INTO subjects (id, name, class_id) VALUES (?, ?, ?)', [englishSubject2Id, 'English', class2Id]);
 
     // Insert teachers
-    await query('INSERT INTO teachers (id, user_id, class_id, subject_ids) VALUES (?, ?, ?, ?)', 
-      [teacherRecord1Id, teacher1Id, classId, JSON.stringify([mathSubjectId])]);
-    await query('INSERT INTO teachers (id, user_id, class_id, subject_ids) VALUES (?, ?, ?, ?)', 
-      [teacherRecord2Id, teacher2Id, classId, JSON.stringify([englishSubjectId])]);
+    await query('INSERT INTO teachers (id, user_id) VALUES (?, ?)', [teacherRecord1Id, teacher1Id]);
+    await query('INSERT INTO teachers (id, user_id) VALUES (?, ?)', [teacherRecord2Id, teacher2Id]);
+
+    // Insert teacher-class relationships (teachers can teach multiple classes)
+    await query('INSERT INTO teacher_classes (id, teacher_id, class_id) VALUES (?, ?, ?)', [uuidv4(), teacherRecord1Id, class1Id]);
+    await query('INSERT INTO teacher_classes (id, teacher_id, class_id) VALUES (?, ?, ?)', [uuidv4(), teacherRecord1Id, class2Id]);
+    await query('INSERT INTO teacher_classes (id, teacher_id, class_id) VALUES (?, ?, ?)', [uuidv4(), teacherRecord2Id, class1Id]);
+
+    // Insert teacher-subject relationships (teachers can teach multiple subjects)
+    await query('INSERT INTO teacher_subjects (id, teacher_id, subject_id) VALUES (?, ?, ?)', [uuidv4(), teacherRecord1Id, mathSubject1Id]);
+    await query('INSERT INTO teacher_subjects (id, teacher_id, subject_id) VALUES (?, ?, ?)', [uuidv4(), teacherRecord1Id, mathSubject2Id]);
+    await query('INSERT INTO teacher_subjects (id, teacher_id, subject_id) VALUES (?, ?, ?)', [uuidv4(), teacherRecord2Id, englishSubject1Id]);
 
     // Insert students
     const studentRecords = [
-      [studentRecord1Id, student1Id, classId],
-      [studentRecord2Id, student2Id, classId],
-      [studentRecord3Id, student3Id, classId]
+      [studentRecord1Id, student1Id, class1Id],
+      [studentRecord2Id, student2Id, class1Id],
+      [studentRecord3Id, student3Id, class2Id]
     ];
 
     for (const student of studentRecords) {
@@ -87,8 +101,8 @@ async function seedDatabase() {
     futureDate.setDate(currentDate.getDate() + 7); // 7 days from now
     
     const assignments = [
-      [mathAssignmentId, classId, mathSubjectId, 'Basic Addition and Subtraction', 'Practice your addition and subtraction skills with these fun questions!', 'mcq', 'Term 1', currentDate.toISOString().slice(0, 19).replace('T', ' '), '2024-12-31 23:59:59'],
-      [englishAssignmentId, classId, englishSubjectId, 'Reading Comprehension', 'Answer questions about the story you read in class.', '2choice', 'Term 1', futureDate.toISOString().slice(0, 19).replace('T', ' '), '2024-12-31 23:59:59']
+      [mathAssignmentId, class1Id, mathSubject1Id, 'Basic Addition and Subtraction', 'Practice your addition and subtraction skills with these fun questions!', 'mcq', 'Term 1', currentDate.toISOString().slice(0, 19).replace('T', ' '), '2024-12-31 23:59:59'],
+      [englishAssignmentId, class1Id, englishSubject1Id, 'Reading Comprehension', 'Answer questions about the story you read in class.', '2choice', 'Term 1', futureDate.toISOString().slice(0, 19).replace('T', ' '), '2024-12-31 23:59:59']
     ];
 
     for (const assignment of assignments) {
@@ -133,8 +147,8 @@ async function seedDatabase() {
     console.log('✅ Database seeded successfully!');
     console.log('\n🔑 Login Credentials:');
     console.log('Admin: admin@school.edu / password123');
-    console.log('Teacher: sarah.johnson@school.edu / password123');
-    console.log('Teacher: michael.brown@school.edu / password123');
+    console.log('Teacher (Math): sarah.johnson@school.edu / password123');
+    console.log('Teacher (English): michael.brown@school.edu / password123');
     console.log('Student: emma.wilson@school.edu / password123');
     console.log('Student: liam.davis@school.edu / password123');
     console.log('Student: olivia.garcia@school.edu / password123');
