@@ -525,4 +525,8 @@ document.getElementById('editUserModal').addEventListener('hidden.bs.modal', fun
     document.querySelectorAll('.edit-teacher-class-checkbox').forEach(cb => cb.checked = false);
     document.querySelectorAll('.edit-teacher-subject-checkbox').forEach(cb => cb.checked = false);
 });
-</script>
+</script>res.render('teacher/assignments', {
+  title: 'Assignments',
+  assignments,
+  className: 'Your Class Name Here' // Replace with actual class name if available
+});

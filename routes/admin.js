@@ -83,14 +83,23 @@ router.get('/users', async (req, res) => {
   }
 });
 
-// Create User
+// Create User with Multi-Class/Subject Support
 router.post('/users', async (req, res) => {
   try {
     const { full_name, email, password, role, class_ids, subject_ids } = req.body;
 
-    // Validate input
+    // Validate required fields
     if (!full_name || !email || !password || !role) {
-      return res.status(400).json({ error: 'All fields are required' });
+      return res.status(400).json({ error: 'Name, email, password, and role are required' });
+    }
+
+    // Validate role-specific requirements
+    if (role === 'student' && !class_ids) {
+      return res.status(400).json({ error: 'Students must be assigned to a class' });
+    }
+
+    if (role === 'teacher' && (!class_ids || !subject_ids)) {
+      return res.status(400).json({ error: 'Teachers must be assigned to at least one class and subject' });
     }
 
     // Check if email already exists
@@ -107,8 +116,8 @@ router.post('/users', async (req, res) => {
     await query('INSERT INTO users (id, full_name, email, password, role, is_whitelisted) VALUES (?, ?, ?, ?, ?, ?)', 
       [userId, full_name, email, hashedPassword, role, true]);
 
-    // Create role-specific record
-    if (role === 'student' && class_ids) {
+    // Handle role-specific assignments
+    if (role === 'student') {
       const studentId = uuidv4();
       await query('INSERT INTO students (id, user_id, class_id) VALUES (?, ?, ?)', 
         [studentId, userId, class_ids]);
@@ -117,17 +126,19 @@ router.post('/users', async (req, res) => {
       await query('INSERT INTO teachers (id, user_id) VALUES (?, ?)', 
         [teacherId, userId]);
 
-      // Add teacher-class relationships
-      if (class_ids && Array.isArray(class_ids)) {
-        for (const classId of class_ids) {
+      // Handle multiple class assignments
+      const classArray = Array.isArray(class_ids) ? class_ids : [class_ids];
+      for (const classId of classArray) {
+        if (classId && classId.trim()) {
           await query('INSERT INTO teacher_classes (id, teacher_id, class_id) VALUES (?, ?, ?)', 
             [uuidv4(), teacherId, classId]);
         }
       }
 
-      // Add teacher-subject relationships
-      if (subject_ids && Array.isArray(subject_ids)) {
-        for (const subjectId of subject_ids) {
+      // Handle multiple subject assignments
+      const subjectArray = Array.isArray(subject_ids) ? subject_ids : [subject_ids];
+      for (const subjectId of subjectArray) {
+        if (subjectId && subjectId.trim()) {
           await query('INSERT INTO teacher_subjects (id, teacher_id, subject_id) VALUES (?, ?, ?)', 
             [uuidv4(), teacherId, subjectId]);
         }
@@ -141,7 +152,7 @@ router.post('/users', async (req, res) => {
   }
 });
 
-// Get User Details for Edit
+// Get User Details for Edit with Complete Relationship Data
 router.get('/users/:id', async (req, res) => {
   try {
     const userId = req.params.id;
@@ -170,6 +181,9 @@ router.get('/users/:id', async (req, res) => {
         // Get teacher subjects
         const teacherSubjects = await query('SELECT subject_id FROM teacher_subjects WHERE teacher_id = ?', [teacherId]);
         userDetails.subject_ids = teacherSubjects.map(ts => ts.subject_id);
+      } else {
+        userDetails.class_ids = [];
+        userDetails.subject_ids = [];
       }
     }
 
@@ -180,15 +194,24 @@ router.get('/users/:id', async (req, res) => {
   }
 });
 
-// Update User
+// Update User with Complete Multi-Class/Subject Support
 router.put('/users/:id', async (req, res) => {
   try {
     const userId = req.params.id;
     const { full_name, email, password, role, class_ids, subject_ids } = req.body;
 
-    // Validate input
+    // Validate required fields
     if (!full_name || !email || !role) {
       return res.status(400).json({ error: 'Name, email, and role are required' });
+    }
+
+    // Validate role-specific requirements
+    if (role === 'student' && !class_ids) {
+      return res.status(400).json({ error: 'Students must be assigned to a class' });
+    }
+
+    if (role === 'teacher' && (!class_ids || !subject_ids)) {
+      return res.status(400).json({ error: 'Teachers must be assigned to at least one class and subject' });
     }
 
     // Check if email already exists for other users
@@ -210,29 +233,25 @@ router.put('/users/:id', async (req, res) => {
 
     await query(updateQuery, updateParams);
 
-    // Handle role-specific updates
-    if (role === 'student') {
-      // Remove teacher records if changing from teacher
-      const teachers = await query('SELECT id FROM teachers WHERE user_id = ?', [userId]);
-      if (teachers.length > 0) {
-        const teacherId = teachers[0].id;
-        await query('DELETE FROM teacher_classes WHERE teacher_id = ?', [teacherId]);
-        await query('DELETE FROM teacher_subjects WHERE teacher_id = ?', [teacherId]);
+    // Clean up existing role-specific records
+    const existingTeachers = await query('SELECT id FROM teachers WHERE user_id = ?', [userId]);
+    if (existingTeachers.length > 0) {
+      const teacherId = existingTeachers[0].id;
+      await query('DELETE FROM teacher_classes WHERE teacher_id = ?', [teacherId]);
+      await query('DELETE FROM teacher_subjects WHERE teacher_id = ?', [teacherId]);
+      if (role !== 'teacher') {
         await query('DELETE FROM teachers WHERE id = ?', [teacherId]);
       }
+    }
 
-      // Update or create student record
-      const students = await query('SELECT id FROM students WHERE user_id = ?', [userId]);
-      if (students.length > 0) {
-        await query('UPDATE students SET class_id = ? WHERE user_id = ?', [class_ids, userId]);
-      } else {
-        await query('INSERT INTO students (id, user_id, class_id) VALUES (?, ?, ?)', 
-          [uuidv4(), userId, class_ids]);
-      }
+    await query('DELETE FROM students WHERE user_id = ?', [userId]);
+
+    // Handle new role assignments
+    if (role === 'student') {
+      const studentId = uuidv4();
+      await query('INSERT INTO students (id, user_id, class_id) VALUES (?, ?, ?)', 
+        [studentId, userId, class_ids]);
     } else if (role === 'teacher') {
-      // Remove student records if changing from student
-      await query('DELETE FROM students WHERE user_id = ?', [userId]);
-
       // Get or create teacher record
       let teachers = await query('SELECT id FROM teachers WHERE user_id = ?', [userId]);
       let teacherId;
@@ -244,32 +263,22 @@ router.put('/users/:id', async (req, res) => {
         teacherId = teachers[0].id;
       }
 
-      // Update teacher classes
-      await query('DELETE FROM teacher_classes WHERE teacher_id = ?', [teacherId]);
-      if (class_ids && Array.isArray(class_ids)) {
-        for (const classId of class_ids) {
+      // Handle multiple class assignments
+      const classArray = Array.isArray(class_ids) ? class_ids : [class_ids];
+      for (const classId of classArray) {
+        if (classId && classId.trim()) {
           await query('INSERT INTO teacher_classes (id, teacher_id, class_id) VALUES (?, ?, ?)', 
             [uuidv4(), teacherId, classId]);
         }
       }
 
-      // Update teacher subjects
-      await query('DELETE FROM teacher_subjects WHERE teacher_id = ?', [teacherId]);
-      if (subject_ids && Array.isArray(subject_ids)) {
-        for (const subjectId of subject_ids) {
+      // Handle multiple subject assignments
+      const subjectArray = Array.isArray(subject_ids) ? subject_ids : [subject_ids];
+      for (const subjectId of subjectArray) {
+        if (subjectId && subjectId.trim()) {
           await query('INSERT INTO teacher_subjects (id, teacher_id, subject_id) VALUES (?, ?, ?)', 
             [uuidv4(), teacherId, subjectId]);
         }
-      }
-    } else if (role === 'admin') {
-      // Remove both student and teacher records if changing to admin
-      await query('DELETE FROM students WHERE user_id = ?', [userId]);
-      const teachers = await query('SELECT id FROM teachers WHERE user_id = ?', [userId]);
-      if (teachers.length > 0) {
-        const teacherId = teachers[0].id;
-        await query('DELETE FROM teacher_classes WHERE teacher_id = ?', [teacherId]);
-        await query('DELETE FROM teacher_subjects WHERE teacher_id = ?', [teacherId]);
-        await query('DELETE FROM teachers WHERE id = ?', [teacherId]);
       }
     }
 
@@ -280,7 +289,7 @@ router.put('/users/:id', async (req, res) => {
   }
 });
 
-// Delete User
+// Delete User with Proper Cleanup
 router.delete('/users/:id', async (req, res) => {
   try {
     const userId = req.params.id;
@@ -298,15 +307,39 @@ router.delete('/users/:id', async (req, res) => {
       return res.status(400).json({ error: 'Cannot delete your own admin account' });
     }
 
-    // Check for dependencies
+    // Check for dependencies before deletion
     if (user.role === 'student') {
-      const submissions = await query('SELECT COUNT(*) as count FROM submissions s JOIN students st ON s.student_id = st.id WHERE st.user_id = ?', [userId]);
+      const submissions = await query(`
+        SELECT COUNT(*) as count 
+        FROM submissions s 
+        JOIN students st ON s.student_id = st.id 
+        WHERE st.user_id = ?
+      `, [userId]);
+      
       if (submissions[0].count > 0) {
-        return res.status(400).json({ error: 'Cannot delete student with existing submissions' });
+        return res.status(400).json({ 
+          error: 'Cannot delete student with existing submissions. Please archive the user instead.' 
+        });
       }
     }
 
-    // Delete user (cascading will handle related records)
+    if (user.role === 'teacher') {
+      const assignments = await query(`
+        SELECT COUNT(*) as count 
+        FROM assignments a 
+        JOIN teacher_subjects ts ON a.subject_id = ts.subject_id 
+        JOIN teachers t ON ts.teacher_id = t.id 
+        WHERE t.user_id = ?
+      `, [userId]);
+      
+      if (assignments[0].count > 0) {
+        return res.status(400).json({ 
+          error: 'Cannot delete teacher with existing assignments. Please reassign assignments first.' 
+        });
+      }
+    }
+
+    // Delete user (cascading will handle related records due to foreign key constraints)
     await query('DELETE FROM users WHERE id = ?', [userId]);
 
     res.json({ success: true });
@@ -351,6 +384,12 @@ router.post('/classes', async (req, res) => {
 
     if (!name || !level) {
       return res.status(400).json({ error: 'Name and level are required' });
+    }
+
+    // Check for duplicate class names
+    const existingClasses = await query('SELECT id FROM classes WHERE name = ?', [name]);
+    if (existingClasses.length > 0) {
+      return res.status(400).json({ error: 'Class name already exists' });
     }
 
     const classId = uuidv4();
@@ -638,7 +677,7 @@ router.get('/assignments/:id', async (req, res) => {
 // Get subjects for class (AJAX)
 router.get('/classes/:classId/subjects', async (req, res) => {
   try {
-    const subjects = await query('SELECT * FROM subjects WHERE class_id = ?', [req.params.classId]);
+    const subjects = await query('SELECT * FROM subjects WHERE class_id = ? ORDER BY name', [req.params.classId]);
     res.json(subjects);
   } catch (error) {
     console.error('Get subjects error:', error);

@@ -3,7 +3,7 @@ const { query } = require('../config/database');
 
 const router = express.Router();
 
-// Teacher Dashboard
+// Teacher Dashboard with Multi-Class Support
 router.get('/dashboard', async (req, res) => {
   try {
     // Get teacher info with classes and subjects
@@ -33,9 +33,9 @@ router.get('/dashboard', async (req, res) => {
       ORDER BY c.level, c.name
     `, [teacher.teacher_id]);
 
-    // Get teacher's subjects
+    // Get teacher's subjects with class information
     const teacherSubjects = await query(`
-      SELECT s.id, s.name, c.name as class_name, c.level
+      SELECT s.id, s.name, c.name as class_name, c.level, c.id as class_id
       FROM teacher_subjects ts
       JOIN subjects s ON ts.subject_id = s.id
       JOIN classes c ON s.class_id = c.id
@@ -45,7 +45,7 @@ router.get('/dashboard', async (req, res) => {
 
     // Get students from teacher's classes
     const students = await query(`
-      SELECT DISTINCT u.full_name, u.email, s.created_at, c.name as class_name
+      SELECT DISTINCT u.id as user_id, u.full_name, u.email, s.created_at, c.name as class_name, c.id as class_id
       FROM students s
       JOIN users u ON s.user_id = u.id
       JOIN classes c ON s.class_id = c.id
@@ -90,7 +90,7 @@ router.get('/dashboard', async (req, res) => {
   }
 });
 
-// View Students
+// View Students with Multi-Class Support
 router.get('/students', async (req, res) => {
   try {
     // Get teacher info
@@ -112,7 +112,7 @@ router.get('/students', async (req, res) => {
 
     // Get students from teacher's classes with their submission stats
     const students = await query(`
-      SELECT u.*, s.id as student_id, s.created_at as enrolled_at, c.name as class_name,
+      SELECT u.*, s.id as student_id, s.created_at as enrolled_at, c.name as class_name, c.id as class_id,
         COUNT(DISTINCT sub.id) as total_submissions,
         COALESCE(AVG(CASE WHEN sub.max_score > 0 THEN (sub.total_score * 100.0 / sub.max_score) ELSE 0 END), 0) as avg_score
       FROM students s
@@ -127,27 +127,10 @@ router.get('/students', async (req, res) => {
       ORDER BY c.name, u.full_name
     `, [teacher.teacher_id]);
 
-    // Get assignments for teacher's subjects
-    const assignments = await query(`
-      SELECT a.*, s.name as subject_name, c.name as class_name,
-        COUNT(DISTINCT q.id) as question_count,
-        COUNT(DISTINCT sub.id) as submission_count,
-        COALESCE(AVG(CASE WHEN sub.max_score > 0 THEN (sub.total_score * 100.0 / sub.max_score) ELSE 0 END), 0) as avg_score
-      FROM assignments a
-      JOIN subjects s ON a.subject_id = s.id
-      JOIN classes c ON a.class_id = c.id
-      JOIN teacher_subjects ts ON s.id = ts.subject_id
-      LEFT JOIN questions q ON a.id = q.assignment_id
-      LEFT JOIN submissions sub ON a.id = sub.assignment_id
-      WHERE ts.teacher_id = ?
-      GROUP BY a.id
-      ORDER BY a.created_at DESC
-    `, [teacher.teacher_id]);
-
     res.render('teacher/students', {
       title: 'Students',
       students,
-      assignments
+      assignments: [] // Prevent EJS error if template expects assignments
     });
   } catch (error) {
     console.error('Students page error:', error);
@@ -159,7 +142,7 @@ router.get('/students', async (req, res) => {
   }
 });
 
-// View Student Details
+// View Student Details with Subject Filtering
 router.get('/students/:id', async (req, res) => {
   try {
     const studentId = req.params.id;
@@ -172,6 +155,22 @@ router.get('/students/:id', async (req, res) => {
     `, [req.session.user.id]);
 
     const teacher = teachers[0];
+
+    // Verify teacher has access to this student
+    const studentAccess = await query(`
+      SELECT s.id
+      FROM students s
+      JOIN teacher_classes tc ON s.class_id = tc.class_id
+      WHERE s.id = ? AND tc.teacher_id = ?
+    `, [studentId, teacher.teacher_id]);
+
+    if (studentAccess.length === 0) {
+      return res.render('error', {
+        title: 'Access Denied',
+        error: 'You do not have access to view this student',
+        statusCode: 403
+      });
+    }
 
     // Get student info
     const students = await query(`
@@ -234,7 +233,7 @@ router.get('/students/:id', async (req, res) => {
   }
 });
 
-// View Assignments
+// View Assignments with Subject Filtering
 router.get('/assignments', async (req, res) => {
   try {
     // Get teacher info
@@ -254,7 +253,7 @@ router.get('/assignments', async (req, res) => {
 
     const teacher = teachers[0];
 
-    // Get assignments for teacher's subjects
+    // Get assignments for teacher's subjects only
     const assignments = await query(`
       SELECT a.*, s.name as subject_name, c.name as class_name,
         COUNT(DISTINCT q.id) as question_count,
@@ -271,15 +270,9 @@ router.get('/assignments', async (req, res) => {
       ORDER BY a.created_at DESC
     `, [teacher.teacher_id]);
 
-    // Get class name for the view (if needed)
-    let className = '';
-    if (assignments.length > 0) {
-      className = assignments[0].class_name || '';
-    }
     res.render('teacher/assignments', {
       title: 'Assignments',
-      assignments,
-      className
+      assignments
     });
   } catch (error) {
     console.error('Assignments page error:', error);
@@ -291,7 +284,7 @@ router.get('/assignments', async (req, res) => {
   }
 });
 
-// View Assignment Details
+// View Assignment Details with Access Control
 router.get('/assignments/:id', async (req, res) => {
   try {
     const assignmentId = req.params.id;
@@ -332,16 +325,17 @@ router.get('/assignments/:id', async (req, res) => {
       ORDER BY question_order, id
     `, [assignmentId]);
 
-    // Get submissions with student details and individual answers
+    // Get submissions with student details and individual answers (only from teacher's classes)
     const submissions = await query(`
       SELECT sub.*, u.full_name as student_name, u.email as student_email, c.name as class_name
       FROM submissions sub
       JOIN students s ON sub.student_id = s.id
       JOIN users u ON s.user_id = u.id
       JOIN classes c ON s.class_id = c.id
-      WHERE sub.assignment_id = ?
+      JOIN teacher_classes tc ON c.id = tc.class_id
+      WHERE sub.assignment_id = ? AND tc.teacher_id = ?
       ORDER BY c.name, u.full_name
-    `, [assignmentId]);
+    `, [assignmentId, teacher.teacher_id]);
 
     // Add detailed answers to each submission
     for (let submission of submissions) {
@@ -380,7 +374,7 @@ router.get('/assignments/:id', async (req, res) => {
   }
 });
 
-// View Individual Submission
+// View Individual Submission with Access Control
 router.get('/submissions/:id', async (req, res) => {
   try {
     const submissionId = req.params.id;
@@ -405,8 +399,9 @@ router.get('/submissions/:id', async (req, res) => {
       JOIN students st ON sub.student_id = st.id
       JOIN users u ON st.user_id = u.id
       JOIN teacher_subjects ts ON s.id = ts.subject_id
-      WHERE sub.id = ? AND ts.teacher_id = ?
-    `, [submissionId, teacher.teacher_id]);
+      JOIN teacher_classes tc ON c.id = tc.class_id
+      WHERE sub.id = ? AND ts.teacher_id = ? AND tc.teacher_id = ?
+    `, [submissionId, teacher.teacher_id, teacher.teacher_id]);
 
     if (submissions.length === 0) {
       return res.render('error', {
