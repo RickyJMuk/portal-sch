@@ -402,6 +402,42 @@ router.post('/classes', async (req, res) => {
   }
 });
 
+// Delete Class (with dependency checks and cleanup)
+router.delete('/classes/:id', async (req, res) => {
+  try {
+    const classId = req.params.id;
+
+    // Check for students in this class
+    const students = await query('SELECT id FROM students WHERE class_id = ?', [classId]);
+    if (students.length > 0) {
+      return res.status(400).json({ error: 'Cannot delete class with enrolled students. Please move or remove students first.' });
+    }
+
+    // Check for subjects in this class
+    const subjects = await query('SELECT id FROM subjects WHERE class_id = ?', [classId]);
+    if (subjects.length > 0) {
+      return res.status(400).json({ error: 'Cannot delete class with subjects. Please delete or move subjects first.' });
+    }
+
+    // Check for assignments in this class
+    const assignments = await query('SELECT id FROM assignments WHERE class_id = ?', [classId]);
+    if (assignments.length > 0) {
+      return res.status(400).json({ error: 'Cannot delete class with assignments. Please delete assignments first.' });
+    }
+
+    // Remove teacher-class relationships
+    await query('DELETE FROM teacher_classes WHERE class_id = ?', [classId]);
+
+    // Delete the class
+    await query('DELETE FROM classes WHERE id = ?', [classId]);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete class error:', error);
+    res.status(500).json({ error: 'Failed to delete class' });
+  }
+});
+
 // Subjects Management
 router.get('/subjects', async (req, res) => {
   try {
@@ -614,6 +650,24 @@ router.post('/assignments', async (req, res) => {
   } catch (error) {
     console.error('Create assignment error:', error);
     res.status(500).json({ error: 'Failed to create assignment' });
+  }
+});
+// Delete Assignment (with cleanup)
+router.delete('/assignments/:id', async (req, res) => {
+  try {
+    const assignmentId = req.params.id;
+
+    // Delete submissions for this assignment
+    await query('DELETE FROM submissions WHERE assignment_id = ?', [assignmentId]);
+    // Delete questions for this assignment
+    await query('DELETE FROM questions WHERE assignment_id = ?', [assignmentId]);
+    // Delete the assignment itself
+    await query('DELETE FROM assignments WHERE id = ?', [assignmentId]);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete assignment error:', error);
+    res.status(500).json({ error: 'Failed to delete assignment' });
   }
 });
 

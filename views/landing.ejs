@@ -1,13 +1,40 @@
 
 
-<div class="landing-hero">
-    <div class="container">
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top custom-navbar">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center" href="#home">
+        <i class="fas fa-graduation-cap me-2"></i>
+      <!-- <img src="/images/skuli.jpg" alt="Logo" style="height: 40px; width: 40px; object-fit: cover; border-radius: 8px; margin-right: 10px;"> -->
+      <span class="fw-bold text-primary">School Portal</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link active" href="#home">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#about">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#contact">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div id="home" class="landing-hero" style="background: url('/images/bg-school.jpg') center center/cover no-repeat; min-height: 100vh; position: relative;">
+    <div class="container" style="position: relative; z-index: 2;">
         <div class="row align-items-center min-vh-100">
             <div class="col-lg-6">
                 <div class="hero-content">
                     <h1 class="display-4 fw-bold mb-4 text-primary">
                         <i class="fas fa-graduation-cap"></i>
-                        Welcome to School Portal
+                        
                     </h1>
                     <p class="lead mb-4">
                         A fun and interactive learning platform where students can complete assignments, 
@@ -86,47 +113,155 @@
                             <i class="fas fa-globe"></i>
                             <span>Geography</span>
                         </div>
-                        <div class="main-illustration">
-                            <i class="fas fa-laptop-code display-1 text-primary"></i>
-                        </div>
+                        
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+<style>
+  .landing-hero {
+    background: url('/images/bg-school.jpg') center center/cover no-repeat;
+    min-height: 100vh;
+    position: relative;
+  }
+  .landing-hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(2, 90, 253, 0.114); /* Blue overlay, bg image still visible */
+    z-index: 1;
+  }
+  .landing-hero .container {
+    position: relative;
+    z-index: 2;
+  }
+  .landing-hero,
+  .landing-hero .hero-content,
+  .landing-hero .feature-card,
+  .landing-hero .feature-content,
+  .landing-hero .hero-illustration,
+  .landing-hero .main-illustration,
+  .landing-hero .floating-card {
+    color: #1a2233 !important;
+  }
+  .landing-hero .display-4,
+  .landing-hero h1,
+  .landing-hero h5,
+  .landing-hero p,
+  .landing-hero .lead {
+    color: #1a2233 !important;
+  }
+  .landing-hero .feature-icon {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+</style>
 </div>
 
-<section class="py-5 bg-light">
-    <div class="container">
-        <div class="row text-center">
-            <div class="col-12 mb-5">
-                <h2 class="fw-bold">How It Works</h2>
-                <p class="text-muted">Simple steps to get started with your learning journey</p>
-            </div>
-        </div>
-        
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="step-card text-center">
-                    <div class="step-number">1</div>
-                    <h4>Login</h4>
-                    <p>Access your personalized dashboard with your school credentials</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="step-card text-center">
-                    <div class="step-number">2</div>
-                    <h4>Choose Subject</h4>
-                    <p>Browse through your assigned subjects and available assignments</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="step-card text-center">
-                    <div class="step-number">3</div>
-                    <h4>Take Quiz</h4>
-                    <p>Complete assignments and get instant feedback on your performance</p>
-                </div>
-            </div>
-        </div>
+<section id="about" class="py-5 bg-light">
+  <div class="container">
+    <div class="row text-center">
+      <div class="col-12 mb-5">
+        <h2 class="fw-bold">How It Works</h2>
+        <p class="text-muted">Simple steps to get started with your learning journey</p>
+      </div>
     </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="step-card text-center">
+          <div class="step-number">1</div>
+          <h4>Login</h4>
+          <p>Access your personalized dashboard with your school credentials</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="step-card text-center">
+          <div class="step-number">2</div>
+          <h4>Choose Subject</h4>
+          <p>Browse through your assigned subjects and available assignments</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="step-card text-center">
+          <div class="step-number">3</div>
+          <h4>Take Quiz</h4>
+          <p>Complete assignments and get instant feedback on your performance</p>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
+
+<!-- Contact Section -->
+<section id="contact" class="py-5 bg-white border-top">
+  <div class="container">
+    <div class="row text-center">
+      <div class="col-12 mb-4">
+        <h2 class="fw-bold">Contact Us</h2>
+        <p class="text-muted">Have questions or need help? Reach out to us below.</p>
+      </div>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <form>
+          <div class="mb-3">
+            <input type="text" class="form-control" placeholder="Your Name" required>
+          </div>
+          <div class="mb-3">
+            <input type="email" class="form-control" placeholder="Your Email" required>
+          </div>
+          <div class="mb-3">
+            <textarea class="form-control" rows="4" placeholder="Your Message" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary px-4">Send Message</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer bg-primary text-white py-4 mt-5">
+  <div class="container text-center">
+    <div class="mb-2">
+      <i class="fas fa-graduation-cap me-2"></i>
+      <span class="fw-bold">School Portal</span>
+    </div>
+    <div>
+      &copy; <span id="year"></span> School Portal. All rights reserved.
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Set current year in footer
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('year').textContent = new Date().getFullYear();
+  });
+</script>
+
+<style>
+  .custom-navbar {
+    transition: box-shadow 0.2s;
+    z-index: 100;
+  }
+  .custom-navbar .nav-link {
+    font-weight: 500;
+    color: #1a2233 !important;
+    margin-left: 1rem;
+    transition: color 0.2s;
+  }
+  .custom-navbar .nav-link.active, .custom-navbar .nav-link:hover {
+    color: #007bff !important;
+  }
+  .footer {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    font-size: 1rem;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.05);
+  }
+</style>
